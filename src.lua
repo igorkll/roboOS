@@ -236,7 +236,7 @@ if gpu then
                 elseif eventData[4] == 208 then
                     if num < #strs then
                         num = num + 1
-                        if (num + 2) > (ry - 2) then
+                        if ((num + 2) - scroll) > (ry - 2) then
                             scroll = scroll + 1
                         end
                         gui.draw(num, scroll)
