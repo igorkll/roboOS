@@ -153,7 +153,7 @@ if gpu then
         redraw()
 
         local function exit()
-            gpu.fill(1, ry, 1, rx, " ")
+            gpu.fill(1, ry, rx, 1, " ")
         end
 
         while 1 do
@@ -188,8 +188,17 @@ if gpu then
         gpu.fill(1, 2, rx, 1, "─")
         gpu.fill(1, ry - 1, rx, 1, "─")        
         gpu.fill(docX, 3, 1, ry - 2, "│")
+        
+        local splitedDoc = split(doc, "\n")
+        local tbl = {}
+        for i, v in ipairs(splitedDoc) do
+            local tempTbl = toParts(v, rx - docX)
+            for i, v in ipairs(tempTbl) do
+                table.insert(tbl, v)
+            end
+        end
 
-        for i, data in ipairs(toParts(split(doc, "\n"), rx - docX)) do
+        for i, data in ipairs(tbl) do
             gpu.set(docX + 1, i + 2, data)
         end
         for i, data in ipairs(strs) do
@@ -204,7 +213,7 @@ if gpu then
     end
 
     function gui.menu(num)
-        gui.setStrColor(num)
+        gui.setStrColor(num, 1)
         while 1 do
             local eventData = {computer.pullSignal()}
             if eventData[1] == "key_down" then
@@ -243,6 +252,7 @@ local num = 1
 local strs = {"input"}
 while 1 do
     gui.setData("test menu", "doc test1\ndoc text2\ndoc text3\n1234567890abcdefghi1234567890abcdefghi1234567890abcdefghi", strs)
+    gui.draw()
     num = gui.menu(num)
     if num == 1 then
         local data = gui.read("input")
