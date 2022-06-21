@@ -259,17 +259,32 @@ if gpu then
         gui.invert()
         gpu.fill((rx / 2) - 10, (ry / 2) - 1, 20, 5, "▒")
         gpu.set((rx / 2) - 9, (ry / 2), str)
-        gpu.set((rx / 2) - 9, (ry / 2) + 1, "")
 
         computer.beep(2000, 0.1)
 
+        local selected = false
+
         while true do
+            if selected then gui.invert() end
+            gpu.set((rx / 2) - 9, (ry / 2) + 1, "yes")
+            if selected then gui.invert() end
+
+            if not selected then gui.invert() end
+            gpu.set((rx / 2) + 9, (ry / 2) + 1, "no")
+            if not selected then gui.invert() end
+
             local eventData = {computer.pullSignal()}
-            if eventData[1] == "key_down" and eventData[4] == 28 then
-                break
+            if eventData[1] == "key_down" then
+                if eventData[4] == 203 then
+                    selected = true
+                elseif eventData[4] == 205 then
+                    selected = false
+                elseif eventData[4] == 28 then
+                    gui.invert()
+                    return selected
+                end
             end
         end
-        gui.invert()
     end
 end
 
@@ -278,9 +293,21 @@ end
 local function usermenager()
     local num, scroll = 1, 0
     local strs = {"add new user", "exit"}
+    local removers = {}
 
     for _, nikname in ipairs({computer.users()}) do
-        
+        table.insert(strs, 1, nikname)
+        table.insert(removers, 1, function()
+            if gui.yesno("remove user?") then
+                for i, v in ipairs(strs) do
+                    if v == nikname then
+                        table.remove(strs, i)
+                        table.remove(removers, i)
+                        break
+                    end
+                end
+            end
+        end)
     end
 
     while 1 do
@@ -297,7 +324,7 @@ local function usermenager()
                 end
             end
         else
-            
+            removers[num]()
         end
     end
 end
