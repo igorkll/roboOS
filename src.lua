@@ -182,7 +182,7 @@ if gpu then
         end
     end
 
-    function gui.draw(num)
+    function gui.draw(num, scroll)
         gpu.fill(1, 1, rx, ry, " ")
         gpu.set(1, 1, label)
         gpu.fill(1, 2, rx, 1, "─")
@@ -202,7 +202,13 @@ if gpu then
             gpu.set(docX + 1, i + 2, data)
         end
         for i, data in ipairs(strs) do
-            gpu.set(1, i + 2, data)
+            local posY = i + 2
+            posY = posY - scroll
+            if posY >= 3 and posY <= (ry - 2) then
+                if i == num then gui.invert() end
+                gpu.set(1, posY, data)
+                if i == num then gui.invert() end
+            end
         end
     end
 
@@ -212,28 +218,36 @@ if gpu then
         if invert then gui.invert() end
     end
 
-    function gui.menu(num)
-        gui.setStrColor(num, 1)
+    function gui.menu(num, scroll)
+        gui.draw(num, scroll)
         while 1 do
             local eventData = {computer.pullSignal()}
             if eventData[1] == "key_down" then
                 if eventData[4] == 28 then
-                    return num
+                    return num, scroll
                 elseif eventData[4] == 200 then
-                    gui.setStrColor(num)
-                    if num > 1 then num = num - 1 end
-                    gui.setStrColor(num, 1)
+                    if num > 1 then
+                        num = num - 1
+                        if ((num + 2) - scroll) < 3 then
+                            scroll = scroll - 1
+                        end
+                        gui.draw(num, scroll)
+                    end
                 elseif eventData[4] == 208 then
-                    gui.setStrColor(num)
-                    if num < #strs then num = num + 1 end
-                    gui.setStrColor(num, 1)
+                    if num < #strs then
+                        num = num + 1
+                        if (num + 2) > (ry - 2) then
+                            scroll = scroll + 1
+                        end
+                        gui.draw(num, scroll)
+                    end
                 end
             end
         end
     end
 
     function gui.setData(label2, docs2, strs2)
-        label, docs = label2, docs2
+        label, docs = label2, type(docs2) == "string" and {[0] = docs2} or docs2
         strs = {}
         for i, v in ipairs(strs2) do
             local str = v:sub(1, docX - 1)
@@ -247,12 +261,11 @@ end
 
 ---------------------------------------------test
 
-local num = 1
+local num, scroll = 1, 0
 local strs = {"input"}
 while 1 do
     gui.setData("test menu", "doc test1\ndoc text2\ndoc text3\n1234567890abcdefghi1234567890abcdefghi1234567890abcdefghi", strs)
-    gui.draw()
-    num = gui.menu(num)
+    num, scroll = gui.menu(num, scroll)
     if num == 1 then
         local data = gui.read("input")
         if data then
