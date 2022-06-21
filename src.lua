@@ -125,7 +125,7 @@ end
 
 if gpu then
     gui = {}
-    local label, doc, strs, docX = "", "", {}
+    local label, docs, strs, docX = "", "", {}
 
     local rx, ry = gpu.getResolution()
 
@@ -148,7 +148,7 @@ if gpu then
             while #str > rx do
                 str = str:sub(2, #str)
             end
-            gpu.set(1, ry, str)
+            gpu.set(1, ry, str .. " ")
         end
         redraw()
 
@@ -182,14 +182,14 @@ if gpu then
         end
     end
 
-    function gui.draw()
+    function gui.draw(num)
         gpu.fill(1, 1, rx, ry, " ")
         gpu.set(1, 1, label)
         gpu.fill(1, 2, rx, 1, "─")
         gpu.fill(1, ry - 1, rx, 1, "─")        
-        gpu.fill(docX, 3, 1, ry - 2, "│")
+        gpu.fill(docX, 3, 1, ry - 4, "│")
         
-        local splitedDoc = split(doc, "\n")
+        local splitedDoc = split(docs[num] or docs[0], "\n")
         local tbl = {}
         for i, v in ipairs(splitedDoc) do
             local tempTbl = toParts(v, rx - docX)
@@ -218,7 +218,6 @@ if gpu then
             local eventData = {computer.pullSignal()}
             if eventData[1] == "key_down" then
                 if eventData[4] == 28 then
-                    gui.setStrColor(num)
                     return num
                 elseif eventData[4] == 200 then
                     gui.setStrColor(num)
@@ -233,8 +232,8 @@ if gpu then
         end
     end
 
-    function gui.setData(label2, doc2, strs2)
-        label, doc = label2, doc2
+    function gui.setData(label2, docs2, strs2)
+        label, docs = label2, docs2
         strs = {}
         for i, v in ipairs(strs2) do
             local str = v:sub(1, docX - 1)
