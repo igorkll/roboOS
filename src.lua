@@ -236,17 +236,17 @@ if gpu then
     end
 
     function gui.warn(str)
-        gpu.fill(8, 4, rx - 15, ry - 4, "▒")
+        gpu.fill(8, 3, rx - 15, ry - 4, "▒")
         local logoPos = math.ceil((rx / 2) - (13 / 2))
-        gpu.set(logoPos, 5,  "▒▒▒▒▒▒█▒▒▒▒▒▒")
-        gpu.set(logoPos, 6,  "▒▒▒▒▒███▒▒▒▒▒")
-        gpu.set(logoPos, 7,  "▒▒▒▒██ ██▒▒▒▒")
-        gpu.set(logoPos, 8,  "▒▒▒███████▒▒▒")
-        gpu.set(logoPos, 9,  "▒▒████ ████▒▒")
-        gpu.set(logoPos, 10, "▒█████ █████▒")
-        gpu.set(logoPos, 11, "█████████████")
-        gui.setText(str, nil, 13)
-        gui.setText("Press Enter To Continue", nil, 14)
+        gpu.set(logoPos, 4,  "▒▒▒▒▒▒█▒▒▒▒▒▒")
+        gpu.set(logoPos, 5,  "▒▒▒▒▒███▒▒▒▒▒")
+        gpu.set(logoPos, 6,  "▒▒▒▒██ ██▒▒▒▒")
+        gpu.set(logoPos, 7,  "▒▒▒███████▒▒▒")
+        gpu.set(logoPos, 8,  "▒▒████ ████▒▒")
+        gpu.set(logoPos, 9,  "▒█████ █████▒")
+        gpu.set(logoPos, 10, "█████████████")
+        gui.setText(str, nil, 12)
+        gui.setText("Press Enter To Continue", nil, 13)
 
         computer.beep(100, 0.2)
 
@@ -269,11 +269,11 @@ if gpu then
 
         while true do
             if selected then gui.invert() end
-            gpu.set((rx / 2) - 9, (ry / 2) + 1, "yes")
+            gpu.set((rx / 2) - 9, (ry / 2) + 2, "yes")
             if selected then gui.invert() end
 
             if not selected then gui.invert() end
-            gpu.set((rx / 2) + 7, (ry / 2) + 1, "no")
+            gpu.set((rx / 2) + 7, (ry / 2) + 2, "no")
             if not selected then gui.invert() end
 
             local eventData = {computer.pullSignal()}
@@ -295,26 +295,27 @@ end
 
 local function usermenager()
     local num, scroll = 1, 0
-    local strs = {"add new user", "exit"}
-    local removers = {}
-
-    for _, nikname in ipairs({computer.users()}) do
-        table.insert(strs, 1, nikname)
-        table.insert(removers, 1, function()
-            if gui.yesno("remove user?") then
-                for i, v in ipairs(strs) do
-                    if v == nikname then
-                        table.remove(strs, i)
-                        table.remove(removers, i)
-                        computer.removeUser(nikname)
-                        break
-                    end
-                end
-            end
-        end)
-    end
 
     while 1 do
+        local strs = {"add new user", "exit"}
+        local removers = {}
+    
+        for _, nikname in ipairs({computer.users()}) do
+            table.insert(strs, 1, nikname)
+            table.insert(removers, 1, function()
+                if gui.yesno("remove user?") then
+                    for i, v in ipairs(strs) do
+                        if v == nikname then
+                            table.remove(strs, i)
+                            table.remove(removers, i)
+                            computer.removeUser(nikname)
+                            break
+                        end
+                    end
+                end
+            end)
+        end
+
         gui.setData("usermenager", {[0] = "user management(useradd/userremove/userlist)"}, strs)
         num, scroll = gui.menu(num, scroll)
         if num == #strs then
@@ -386,19 +387,25 @@ local function settings()
     end
 end
 
-local num, scroll = 1, 0
-local strs = {"shutdown", "reboot", "settings", "boot to external os"}
-local doc = {[0] = "main doc:\nnavigation ↑↓\nok - enter", [4] = "boot to an external OS for example openOS"}
 while 1 do
-    gui.setData("roboOS", doc, strs)
-    num, scroll = gui.menu(num, scroll)
-    if num == 1 then
-        computer.shutdown()
-    elseif num == 2 then
-        computer.shutdown(1)
-    elseif num == 3 then
-        settings()
-    elseif num == 4 then
-        bootToExternalOS()
+    local num, scroll = 1, 0
+
+    local strs = {"refresh", "shutdown", "reboot", "settings", "boot to external os"}
+    local doc = {[0] = "main doc:\nnavigation ↑↓\nok - enter", [4] = "boot to an external OS for example openOS"}
+
+    while 1 do
+        gui.setData("roboOS", doc, strs)
+        num, scroll = gui.menu(num, scroll)
+        if num == 1 then
+            break
+        elseif num == 2 then
+            computer.shutdown()
+        elseif num == 3 then
+            computer.shutdown(1)
+        elseif num == 4 then
+            settings()
+        elseif num == 5 then
+            bootToExternalOS()
+        end
     end
 end
