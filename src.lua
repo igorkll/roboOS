@@ -121,18 +121,20 @@ function bootToOS(address, file)
     computer.shutdown()
 end
 
----------------------------------------------
+---------------------------------------------gui
 
 if gpu then
     gui = {}
-    local label, doc, strs, funcs = "", "", {}, {}
+    local label, doc, strs, docX = "", "", {}
 
     local rx, ry = gpu.getResolution()
 
     function gui.setResolution(x, y)
         gpu.setResolution(x, y)
         rx, ry = x, y
+        docX = math.floor((x / 3) * 2)
     end
+    gui.setResolution(gpu.getResolution())
 
     function gui.invert()
         gpu.setBackground(gpu.setForeground(gpu.getBackground()))
@@ -184,9 +186,7 @@ if gpu then
         gpu.fill(1, 1, rx, ry, " ")
         gpu.set(1, 1, label)
         gpu.fill(1, 2, rx, 1, "─")
-        gpu.fill(1, ry - 1, rx, 1, "─")
-
-        local docX = math.floor((rx / 3) * 2)
+        gpu.fill(1, ry - 1, rx, 1, "─")        
         gpu.fill(docX, 3, 1, ry - 2, "│")
 
         for i, data in ipairs(toParts(split(doc, "\n"), rx - docX)) do
@@ -197,11 +197,59 @@ if gpu then
         end
     end
 
-    function gui.menu()
-        
+    function gui.setStrColor(num, invert)
+        if invert then gui.invert() end
+        gpu.set(1, num + 2, strs[num])
+        if invert then gui.invert() end
     end
 
-    function gui.setData(label2, doc2, strs2, funcs2)
-        label, doc, strs, funcs = label2, doc2, strs2, funcs2
+    function gui.menu(num)
+        gui.setStrColor(num)
+        while 1 do
+            local eventData = {computer.pullSignal()}
+            if eventData[1] == "key_down" then
+                if eventData[4] == 28 then
+                    gui.setStrColor(num)
+                    return num
+                elseif eventData[4] == 200 then
+                    gui.setStrColor(num)
+                    if num > 1 then num = num - 1 end
+                    gui.setStrColor(num, 1)
+                elseif eventData[4] == 208 then
+                    gui.setStrColor(num)
+                    if num < #strs then num = num + 1 end
+                    gui.setStrColor(num, 1)
+                end
+            end
+        end
+    end
+
+    function gui.setData(label2, doc2, strs2)
+        label, doc = label2, doc2
+        strs = {}
+        for i, v in ipairs(strs2) do
+            local str = v:sub(1, docX - 1)
+            while #str < (docX - 1) do
+                str = str .. " "
+            end
+            table.insert(strs, str)
+        end
+    end
+end
+
+---------------------------------------------test
+
+local num = 1
+local strs = {"input"}
+while 1 do
+    gui.setData("test menu", "doc test1\ndoc text2\ndoc text3\n1234567890abcdefghi1234567890abcdefghi1234567890abcdefghi", strs)
+    num = gui.menu(num)
+    if num == 1 then
+        local data = gui.read("input")
+        if data then
+            table.insert(strs, data)
+        end
+    else
+        computer.beep()
     end
 end
