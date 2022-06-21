@@ -1,32 +1,11 @@
 ---------------------------------------------gpu
 
 local gpu = component.proxy(component.list("gpu")() or "")
-if gpu.bind(component.list("screen")() or "", true) then
-    gpu.setResolution(50, 16)
-else
-    gpu = nil
-end
-
----------------------------------------------graphic
-
-do
-    local px, py = 1, 1
-
-    local term = {}
-    function term.write(str)
-        local strs = {}
-
-    end
-    function term.setCursor(x, y)
-        px, py = x, y
-    end
-    function term.getCursor(x, y)
-        return px, py
-    end
-    function print(...)
-        for _, v in ipairs{...} do
-            
-        end
+if gpu then
+    if gpu.bind(component.list("screen")() or "", true) then
+        gpu.setResolution(50, 16)
+    else
+        gpu = a
     end
 end
 
@@ -189,7 +168,7 @@ if gpu then
         gpu.fill(1, ry - 1, rx, 1, "─")        
         gpu.fill(docX, 3, 1, ry - 4, "│")
         
-        local splitedDoc = split(docs[num] or docs[0], "\n")
+        local splitedDoc = split(docs[num] or docs[0] or "", "\n")
         local tbl = {}
         for i, v in ipairs(splitedDoc) do
             local tempTbl = toParts(v, rx - docX)
@@ -257,21 +236,107 @@ if gpu then
             table.insert(strs, str)
         end
     end
+
+    function gui.warn()
+        gpu.fill()
+    end
 end
 
 ---------------------------------------------test
 
+local function usermenager()
+    local num, scroll = 1, 0
+    local strs = {"add new user", "exit"}
+
+    for _, nikname in ipairs({computer.users()}) do
+        
+    end
+
+    while 1 do
+        gui.setData("usermenager", {[0] = "user management(useradd/userremove/userlist)"}, strs)
+        num, scroll = gui.menu(num, scroll)
+        if #num == #strs then
+            break
+        elseif #num == (#strs - 1) then
+            local nikname = gui.read()
+            if nikname then
+                local ok, err = computer.addUser(nikname)
+                if not ok then
+                    gui.
+                end
+            end
+        else
+            osList[num]()
+        end
+    end
+end
+
+local function autorunSettings()
+    
+end
+
+local function bootToExternalOS()
+    local num, scroll = 1, 0
+    local strs = {"exit"}
+    local osList = {}
+
+    for address in component.list("filesystem") do
+        local proxy = component.proxy(address)
+        local function addFile(file)
+            table.insert(strs, 1, (proxy.getLabel() or "noLabel") .. ":" .. address:sub(1, 6) .. ":" .. file)
+            table.insert(osList, 1, function()
+                bootToOS(address, file)
+            end)
+        end
+        if proxy.exists("/init.lua") then
+            addFile("/init.lua")
+        end
+        for _, file in ipairs(proxy.list("/boot/kernel") or {}) do
+            addFile("/boot/kernel/" .. file)
+        end
+    end
+
+    while 1 do
+        gui.setData("boot to external os", {[0] = "boot to an external OS for example openOS"}, strs)
+        num, scroll = gui.menu(num, scroll)
+        if #num == #strs then
+            break
+        else
+            osList[num]()
+        end
+    end
+end
+
+local function settings()
+    local num, scroll = 1, 0
+    local strs = {"autorun", "usermenager"}
+    local doc = {"set autorun mode and autorun programm", "user management(useradd/userremove/userlist)"}
+    while 1 do
+        gui.setData("settings", doc, strs)
+        num, scroll = gui.menu(num, scroll)
+        if num == 1 then
+            autorunSettings()
+        elseif num == 2 then
+            usermenager()
+        end
+    end
+end
+
 local function mainmenu()
     local num, scroll = 1, 0
-    local strs = {"settings", "usermenager"}
-    local doc = {"", ""}
+    local strs = {"shutdown", "reboot", "settings", "boot to external os"}
+    local doc = {[0] = "main doc:\nnavigation ↑↓\nok - enter", [4] = "boot to an external OS for example openOS"}
     while 1 do
         gui.setData("roboOS", doc, strs)
         num, scroll = gui.menu(num, scroll)
         if num == 1 then
-            
+            computer.shutdown()
         elseif num == 2 then
-            
+            computer.shutdown(1)
+        elseif num == 3 then
+            settings()
+        elseif num == 4 then
+            bootToExternalOS()
         end
     end
 end
