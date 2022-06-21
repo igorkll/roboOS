@@ -188,6 +188,12 @@ if gpu then
         gpu.set(1, 1, gui.label)
         gpu.fill(1, 2, rx, 1, "─")
         gpu.fill(1, ry - 1, rx, 1, "─")
-        gpu.fill(math.floor((rx / 3) * 2), 3, 1, ry - 2, "│")
+
+        local docX = math.floor((rx / 3) * 2)
+        gpu.fill(docX, 3, 1, ry - 2, "│")
+
+        for i, data in ipairs(toParts(split(gui.doc, "\n"), rx - docX)) do
+            gpu.set(docX + 1, i, data)
+        end
     end
 end
