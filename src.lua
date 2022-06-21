@@ -34,6 +34,23 @@ end
 
 local eeprom = component.proxy(component.list("eeprom")())
 
+function getDataPart(part)
+    return split(eeprom.getData(), "\n")[part] or ""
+end
+
+function setDataPart(part, newdata)
+    if getDataPart(part) == newdata then return end
+    if newdata:find("\n") then error("\\n char") end
+    local parts = split(eeprom.getData(), "\n")
+    for i = part, 1, -1 do
+        if not parts[i] then parts[i] = "" end
+    end
+    parts[part] = newdata
+    eeprom.setData(table.concat(parts, "\n"))
+end
+
+---------------------------------------------functions
+
 function split(str, sep)
     local parts, count, i = {}, 1, 1
     while 1 do
@@ -52,24 +69,23 @@ function split(str, sep)
     return parts
 end
 
-function getDataPart(part)
-    return split(eeprom.getData(), "\n")[part] or ""
-end
-
-function setDataPart(part, newdata)
-    if getDataPart(part) == newdata then return end
-    if newdata:find("\n") then error("\\n char") end
-    local parts = split(eeprom.getData(), "\n")
-    for i = part, 1, -1 do
-        if not parts[i] then parts[i] = "" end
+function toParts(str, max)
+    local strs = {}
+    local temp = ""
+    for i = 1, #str do
+        local char = str:sub(i, i)
+        temp = temp .. char
+        if #temp >= max then
+            table.insert(strs, temp)
+            temp = ""
+        end
     end
-    parts[part] = newdata
-    eeprom.setData(table.concat(parts, "\n"))
+    table.insert(strs, temp)
+    if #strs[#strs] == 0 then table.remove(strs, #strs) end
+    return strs
 end
 
----------------------------------------------functions
-
-local function bootToOS(address, file)
+function bootToOS(address, file)
     function computer.getBootAddress()
         return address
     end
@@ -111,13 +127,63 @@ if gpu then
     gui = {}
     gui.label = ""
     gui.doc = ""
+    gui.strs = {}
+    gui.funcs = {}
+
+    local rx, ry = gpu.getResolution()
+
+    function gui.setResolution(x, y)
+        gpu.setResolution(x, y)
+        rx, ry = x, y
+    end
 
     function gui.invert()
         gpu.setBackground(gpu.setForeground(gpu.getBackground()))
     end
 
+    function gui.read(str)
+        local buffer = ""
+        
+        local function redraw()
+            local str = str .. ": " .. buffer .. "_"
+            while #str > rx do
+                str = str:sub(2, #str)
+            end
+            gpu.set(1, ry, str)
+        end
+        redraw()
+
+        local function exit()
+            gpu.fill(1, ry, 1, rx, " ")
+        end
+
+        while 1 do
+            local eventData = {computer.pullSignal()}
+            if eventData[1] == "key_down" then
+                if eventData[4] == 28 then
+                    exit()
+                    return buffer
+                elseif eventData[3] >= 32 and eventData[3] <= 126 then
+                    buffer = buffer .. string.char(eventData[3])
+                    redraw()
+                elseif eventData[4] == 14 then
+                    if #buffer > 0 then
+                        buffer = buffer:sub(1, #buffer - 1)
+                        redraw()
+                    end
+                elseif eventData[4] == 46 then
+                    exit()
+                    break --exit ctrl + c
+                end
+            elseif eventData[1] == "clipboard" then
+                buffer = buffer .. eventData[3]
+                redraw()
+                if buffer:byte(#buffer) == 13 then exit() return buffer end
+            end
+        end
+    end
+
     function gui.draw()
-        local rx, ry = gpu.getResolution()
         gpu.fill(1, 1, rx, ry, " ")
         gpu.set(1, 1, gui.label)
         gpu.fill(1, 2, rx, 1, "─")
