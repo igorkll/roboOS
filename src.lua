@@ -191,12 +191,6 @@ if gpu then
         end
     end
 
-    function gui.setStrColor(num, invert)
-        if invert then gui.invert() end
-        gpu.set(1, num + 2, strs[num])
-        if invert then gui.invert() end
-    end
-
     function gui.menu(num, scroll)
         gui.draw(num, scroll)
         while 1 do
@@ -237,8 +231,45 @@ if gpu then
         end
     end
 
-    function gui.warn()
-        gpu.fill()
+    function gui.warn(str)
+        gui.invert()
+        gpu.fill(8, 4, rx - 8 - 8, ry - 4 - 4, "▒")
+        gpu.set(17, 5,  "▒▒▒▒▒▒█▒▒▒▒▒▒")
+        gpu.set(17, 6,  "▒▒▒▒▒███▒▒▒▒▒")
+        gpu.set(17, 7,  "▒▒▒▒██ ██▒▒▒▒")
+        gpu.set(17, 8,  "▒▒▒███████▒▒▒")
+        gpu.set(17, 9,  "▒▒████ ████▒▒")
+        gpu.set(17, 10, "▒█████ █████▒")
+        gpu.set(17, 11, "█████████████")
+        gpu.set(17, 13, str)
+        gpu.set(17, 14, "Press Enter To Continue")
+
+        computer.beep(100, 0.2)
+
+        while true do
+            local eventData = {computer.pullSignal()}
+            if eventData[1] == "key_down" and eventData[4] == 28 then
+                break
+            end
+        end
+        gui.invert()
+    end
+
+    function gui.yesno(str)
+        gui.invert()
+        gpu.fill((rx / 2) - 10, (ry / 2) - 1, 20, 5, "▒")
+        gpu.set((rx / 2) - 9, (ry / 2), str)
+        gpu.set((rx / 2) - 9, (ry / 2) + 1, "")
+
+        computer.beep(2000, 0.1)
+
+        while true do
+            local eventData = {computer.pullSignal()}
+            if eventData[1] == "key_down" and eventData[4] == 28 then
+                break
+            end
+        end
+        gui.invert()
     end
 end
 
@@ -262,11 +293,11 @@ local function usermenager()
             if nikname then
                 local ok, err = computer.addUser(nikname)
                 if not ok then
-                    gui.
+                    gui.warn(err)
                 end
             end
         else
-            osList[num]()
+            
         end
     end
 end
