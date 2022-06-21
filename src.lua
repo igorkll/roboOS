@@ -264,7 +264,16 @@ end
 local num, scroll = 1, 0
 local strs = {"input"}
 while 1 do
-    gui.setData("test menu", "doc test1\ndoc text2\ndoc text3\n1234567890abcdefghi1234567890abcdefghi1234567890abcdefghi", strs)
+    local doc = {[0] = "doc test1\ndoc text2\ndoc text3\n1234567890abcdefghi1234567890abcdefghi1234567890abcdefghi"}
+    for i, v in ipairs(strs) do
+        if i > 5 then
+            table.insert(doc, "doc for " .. v)
+        else
+            table.insert(doc, false)
+        end
+    end
+
+    gui.setData("test menu", doc, strs)
     num, scroll = gui.menu(num, scroll)
     if num == 1 then
         local data = gui.read("input")
