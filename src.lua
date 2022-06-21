@@ -125,10 +125,7 @@ end
 
 if gpu then
     gui = {}
-    gui.label = ""
-    gui.doc = ""
-    gui.strs = {}
-    gui.funcs = {}
+    local label, doc, strs, funcs = "", "", {}, {}
 
     local rx, ry = gpu.getResolution()
 
@@ -185,15 +182,26 @@ if gpu then
 
     function gui.draw()
         gpu.fill(1, 1, rx, ry, " ")
-        gpu.set(1, 1, gui.label)
+        gpu.set(1, 1, label)
         gpu.fill(1, 2, rx, 1, "─")
         gpu.fill(1, ry - 1, rx, 1, "─")
 
         local docX = math.floor((rx / 3) * 2)
         gpu.fill(docX, 3, 1, ry - 2, "│")
 
-        for i, data in ipairs(toParts(split(gui.doc, "\n"), rx - docX)) do
-            gpu.set(docX + 1, i, data)
+        for i, data in ipairs(toParts(split(doc, "\n"), rx - docX)) do
+            gpu.set(docX + 1, i + 2, data)
         end
+        for i, data in ipairs(strs) do
+            gpu.set(1, i + 2, data)
+        end
+    end
+
+    function gui.menu()
+        
+    end
+
+    function gui.setData(label2, doc2, strs2, funcs2)
+        label, doc, strs, funcs = label2, doc2, strs2, funcs2
     end
 end
