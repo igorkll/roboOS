@@ -509,7 +509,7 @@ if gui then
                             end
                             table.insert(strs, "exit")
 
-                            gui.setData("select target to " .. (clone and "clone " or "copy ") .. programmName, {}, strs)
+                            gui.setData("select target to " .. (clone and "move " or "copy ") .. programmName, {}, strs)
                             local num, scroll = gui.menu(1, 0)
                             if not addresses[num] then
                                 return 1
@@ -523,12 +523,14 @@ if gui then
                                     name = newname
                                 elseif name:find("%/") or name:find("%\\") then
                                     gui.warn("unsupported char /")
+                                    return 1
                                 else
                                     gui.warn("using new name canceled")
+                                    gui.draw(num, scroll)
                                 end
                             end
 
-                            if not gui.yesno(clone and "clone?" or "copy?") then
+                            if not gui.yesno(clone and "move?" or "copy?") then
                                 return 1
                             end
                             local targetProxy = component.proxy(addresses[num])
@@ -555,11 +557,13 @@ if gui then
                             recurse(full_path, "/roboOS/programs/" .. name)
                         end
 
-                        local num, scroll = 1, 0
+                        local num, scroll, refresh = 1, 0
                         while 1 do
-                            gui.setData("programm " .. programmName, {[0] = doc[index]}, {"open", "set to autorun", "clone", "copy", "remove", "rename", "back"})
+                            gui.setData("programm " .. programmName, {[0] = doc[index]}, {"open", "set to autorun", "move", "copy", "remove", "rename", "back"})
                             num, scroll = gui.menu(num, scroll)
                             if check() then return 1 end
+                            local old_full_path = full_path
+                            local setAutorun = proxy.exists("/roboOS/autorun.cfg") and getFile(proxy, "/roboOS/autorun.cfg") == (old_full_path .. "main.lua")
                             if num == 1 then
                                 if not runProgramm(proxy, full_path .. "main.lua") then
                                     return 1
@@ -567,19 +571,27 @@ if gui then
                             elseif num == 2 then
                                 saveFile(proxy, "/roboOS/autorun.cfg", full_path .. "main.lua")
                             elseif num == 3 then
-                                --clone
-                                copy(1)
+                                --move
+                                if not copy(1) then
+                                    proxy.remove(full_path)
+                                    if setAutorun then
+                                        proxy.remove("/roboOS/autorun.cfg")
+                                    end
+                                    return 1
+                                end
                             elseif num == 4 then
                                 --copy
                                 if not copy() then
-                                    proxy.remove(full_path)
-                                    return 1
+                                    refresh = 1
                                 end
                             elseif num == 5 then
                                 --remove
                                 if gui.yesno("remove?") then
                                     if check() then return 1 end
                                     proxy.remove(full_path)
+                                    if setAutorun then
+                                        proxy.remove("/roboOS/autorun.cfg")
+                                    end
                                     return 1
                                 end
                             elseif num == 6 then
@@ -590,18 +602,16 @@ if gui then
                                         gui.warn("unsupported char /")
                                     else
                                         if check() then return 1 end
-                                        local old_full_path = full_path
                                         full_path = fs_path(old_full_path) .. "/" .. data
-                                        local setAutorun = getFile(proxy, "/roboOS/autorun.cfg") == old_full_path
                                         proxy.rename(old_full_path, full_path)
                                         if setAutorun then
-                                            saveFile(proxy, "/roboOS/autorun.cfg", full_path .. "main.lua")
+                                            saveFile(proxy, "/roboOS/autorun.cfg", full_path .. "/main.lua")
                                         end
                                         return 1
                                     end
                                 end
                             else
-                                break
+                                return refresh
                             end
                         end
                     end
