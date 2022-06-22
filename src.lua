@@ -359,9 +359,9 @@ local function themes()
         gui.setData("theme selector", doc, strs)
         num, scroll = gui.menu(num, scroll)
         if num == 1 then
-            setTheme(1)
+            setTheme(true)
         elseif num == 2 then
-            setTheme()
+            setTheme(false)
         elseif num == 3 then
             break
         end
