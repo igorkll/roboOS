@@ -305,8 +305,8 @@ if gpu then
         gpu.fill((rx / 2) - 10, (ry / 2) - 1, 20, 5, "▒")
         gui.setText(str, a, (ry / 2))
 
-        computer.beep(5000, 0.1)
-        computer.beep(2000, 0.1)
+        computer.beep(500, 0.01)
+        computer.beep(2000, 0.01)
 
         local selected = a
 
@@ -560,7 +560,7 @@ if autorunProxy then
         gui.status("press alt to skip autorun")
         local inTime = computer.uptime()
         repeat
-            local eventData = {computer.pullSignal()}
+            local eventData = {computer.pullSignal(0.1)}
             if eventData[1] == "key_down" and eventData[4] == 56 then
                 goto skipautorun
             end
