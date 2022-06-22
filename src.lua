@@ -501,8 +501,10 @@ if gui then
                             local strs = {}
                             local addresses = {}
                             for address in component.list"filesystem" do
-                                if not component.invoke(address, "isReadOnly") then
+                                local proxy = component.proxy(address)
+                                if not proxy.isReadOnly() then
                                     table.insert(strs, (proxy.getLabel() or "noLabel") .. ":" .. address:sub(1, 6))
+                                    table.insert(addresses, address)
                                 end
                             end
                             table.insert(strs, "exit")
@@ -516,7 +518,7 @@ if gui then
                             local name = programmName
                             if gui.yesno("use new name?") then
                                 gui.draw(num, scroll)
-                                local newname = gui.read()
+                                local newname = gui.read("new name")
                                 if newname then
                                     name = newname
                                 elseif name:find("%/") or name:find("%\\") then
@@ -534,23 +536,26 @@ if gui then
                             local function recurse(path, toPath)
                                 for _, file in ipairs(proxy.list(path)) do
                                     local local_full_path = path .. file
-                                    local rePath = toPath .. file
+                                    local rePath = toPath .. "/" .. file
                                     if proxy.isDirectory(local_full_path) then
                                         recurse(local_full_path, rePath)
                                     else
+                                        --gui.warn("dir: " .. fs_path(rePath))
+                                        --gui.warn("old: " .. local_full_path)
+                                        --gui.warn("new: " .. rePath)
                                         targetProxy.makeDirectory(fs_path(rePath))
                                         saveFile(targetProxy, rePath, getFile(proxy, local_full_path))
                                     end
                                 end
                             end
-                            if targetProxy.exists("/roboOS/" .. name) then
+                            if targetProxy.exists("/roboOS/programs/" .. name) then
                                 gui.warn("this name used")
                                 return 1
                             end
-                            recurse(full_path, "/roboOS/" .. name)
+                            recurse(full_path, "/roboOS/programs/" .. name)
                         end
 
-                        local num, scroll, refresh = 1, 0
+                        local num, scroll = 1, 0
                         while 1 do
                             gui.setData("programm " .. programmName, {[0] = doc[index]}, {"open", "set to autorun", "clone", "copy", "remove", "rename", "back"})
                             num, scroll = gui.menu(num, scroll)
@@ -563,16 +568,17 @@ if gui then
                                 saveFile(proxy, "/roboOS/autorun.cfg", full_path .. "main.lua")
                             elseif num == 3 then
                                 --clone
-                                if not copy(true) then
+                                copy(1)
+                            elseif num == 4 then
+                                --copy
+                                if not copy() then
                                     proxy.remove(full_path)
                                     return 1
                                 end
-                            elseif num == 4 then
-                                --copy
-                                copy()
                             elseif num == 5 then
                                 --remove
                                 if gui.yesno("remove?") then
+                                    if check() then return 1 end
                                     proxy.remove(full_path)
                                     return 1
                                 end
@@ -583,14 +589,19 @@ if gui then
                                     if data:find("%/") or data:find("%\\") then
                                         gui.warn("unsupported char /")
                                     else
+                                        if check() then return 1 end
                                         local old_full_path = full_path
                                         full_path = fs_path(old_full_path) .. "/" .. data
+                                        local setAutorun = getFile(proxy, "/roboOS/autorun.cfg") == old_full_path
                                         proxy.rename(old_full_path, full_path)
-                                        refresh = 1
+                                        if setAutorun then
+                                            saveFile(proxy, "/roboOS/autorun.cfg", full_path .. "main.lua")
+                                        end
+                                        return 1
                                     end
                                 end
                             else
-                                return refresh
+                                break
                             end
                         end
                     end
