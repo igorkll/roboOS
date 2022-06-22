@@ -295,7 +295,7 @@ if gpu then
 
     function gui.status(str)
         gpu.fill(8, 3, rx - 15, ry - 4, "▒")
-        gui.setText(str, a, (ry / 2) + 1)
+        gui.setText(str, a, ry / 2)
 
         computer.beep(1000, 0.1)
     end
@@ -541,10 +541,11 @@ local function downloadApp()
 
         gui.setData("select drive to save", {}, strs)
 
-        local num, scroll
+        local num, scroll = 1, 0
         while 1 do
             num, scroll = gui.menu(num, scroll)
-            if not runs[num] or runs[num]() then break end
+            if not runs[num] then break end
+            if runs[num]() then return 1 end
         end
     end
 end
@@ -772,7 +773,9 @@ if gui then
             elseif num == 5 then
                 bootToExternalOS()
             elseif num == 6 then
-                downloadApp()
+                if downloadApp() then
+                    break
+                end
             else
                 if runs[num]() then
                     break
