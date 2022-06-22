@@ -482,9 +482,7 @@ local function bootToExternalOS()
 end
 
 local function settings()
-    local num, scroll = 1, 0
-    local strs = {"autorun", "usermenager", "theme", "exit"}
-    local doc = {"set autorun mode and autorun programm", "user management(useradd/userremove/userlist)", "theme selector"}
+    local num, scroll, strs, doc = 1, 0, {"autorun", "usermenager", "theme", "exit"}, {"set autorun mode and autorun programm", "user management(useradd/userremove/userlist)", "theme selector"}
     while 1 do
         gui.setData("settings", doc, strs)
         num, scroll = gui.menu(num, scroll)
@@ -501,19 +499,18 @@ local function settings()
 end
 
 local function runProgramm(fs, file)
-    local ok, data = pcall(getFile, fs, file)
+    local ok, data, code, err = pcall(getFile, fs, file)
     if not ok or not data then
-        local msg = "err to get programm"
         --local msg = "err to get programm: " .. (data or "unknown")
-        if gui then gui.warn(msg) end
-        return a, msg
+        if gui then gui.warn("err to get programm") end
+        return a, "err to get programm"
     end
-    local code, err = load(data, "=programm")
+    code, err = load(data, "=programm")
     if not code then
         if gui then gui.warn("err to load programm: " .. err) end
         return a, err
     end
-    local ok, err = pcall(code, {file = file, fs = fs})
+    ok, err = pcall(code, {file = file, fs = fs})
     if not ok then
         if gui then gui.warn("err to run programm: " .. (err or "unknown")) end
         return a, (err or "unknown")
@@ -536,18 +533,17 @@ local function downloadApp()
             return
         end
         
-        local strs = {}
-        local runs = {}
+        local strs, runs, proxy, name, path = {}, {}
         for address in component.list"filesystem" do
-            local proxy = component.proxy(address)
+            proxy = component.proxy(address)
             if not proxy.isReadOnly() then
                 table.insert(runs, function()
-                    local name = gui.read"name to save"
+                    name = gui.read"name to save"
                     if name then
                         if name:find"%/" or name:find"%\\" then
                             gui.status"unsupported char /"
                         else
-                            local path = "/roboOS/programs/" .. name
+                            path = "/roboOS/programs/" .. name
                             if proxy.exists(path) then
                                 gui.warn("this name used")
                                 return
@@ -574,11 +570,10 @@ local function downloadApp()
     end
 end
 
-local autorunProxy, autorunFile
+local internal, external, lists, autorunProxy, autorunFile, deviceinfo, inTime, eventData = {}, {}, {}
 if getDataPart(2) ~= "d" then --is not disable
-    local internal, external = {}, {}
     do
-        local deviceinfo = computer.getDeviceInfo()
+        deviceinfo = computer.getDeviceInfo()
         for address in component.list"filesystem" do
             if address ~= computer.tmpAddress() and (component.slot(address) < 0 or deviceinfo[address].clock == "20/20/20") then
                 table.insert(external, address)
@@ -587,7 +582,6 @@ if getDataPart(2) ~= "d" then --is not disable
             end
         end
     end
-    local lists = {}
     if getDataPart(2) == "" then --priority external
         table.insert(lists, external)
         table.insert(lists, internal)
@@ -602,9 +596,9 @@ if getDataPart(2) ~= "d" then --is not disable
 
     for _, list in ipairs(lists) do
         for _, address in ipairs(list) do
-            local proxy = component.proxy(address)
+            local proxy, data = component.proxy(address)
             if proxy.exists"/roboOS/autorun.cfg" then
-                local data = getFile(proxy, "/roboOS/autorun.cfg")
+                data = getFile(proxy, "/roboOS/autorun.cfg")
                 if proxy.exists(data) then
                     autorunProxy = proxy
                     autorunFile = data
@@ -619,9 +613,9 @@ end
 if autorunProxy then
     if gui then
         gui.status"press alt to skip autorun"
-        local inTime = computer.uptime()
+        inTime = computer.uptime()
         repeat
-            local eventData = {computer.pullSignal(0.1)}
+            eventData = {computer.pullSignal(0.1)}
             if eventData[1] == "key_down" and eventData[4] == 56 then
                 goto skipautorun
             end
@@ -633,9 +627,9 @@ end
 
 if gui then
     while 1 do
-        local num, scroll = 1, 0
+        local num, scroll, strs = 1, 0, {"refresh", "shutdown", "reboot", "settings", "boot to external os", "download programm"}
 
-        local strs = {"refresh", "shutdown", "reboot", "settings", "boot to external os", "download programm"}
+        local  = 
         local doc = {[0] = "navigation ↑↓\nok - enter", [5] = "boot to:\nopenOS\nplan9k\nother...", [6] = "download programm from internet used internet-card"}
         local runs = {}
         for address in component.list"filesystem" do
