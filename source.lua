@@ -1,6 +1,7 @@
 ---------------------------------------------gpu
+--.{<кол-во символов>}|.+
 
-local gpu = component.proxy(component.list"gpu"() or "")
+local gpu, eeprom = component.proxy(component.list"gpu"() or ""), component.proxy(component.list"eeprom"())
 if gpu then
     if gpu.bind(component.list"screen"() or "", true) then
         gpu.setResolution(50, 16)
@@ -10,8 +11,6 @@ if gpu then
 end
 
 ---------------------------------------------eeprom
-
-local eeprom = component.proxy(component.list"eeprom"())
 
 function getDataPart(part)
     return split(eeprom.getData(), "\n")[part] or ""
@@ -31,10 +30,10 @@ end
 ---------------------------------------------functions
 
 function split(str, sep)
-    local parts, count, i = {}, 1, 1
+    local parts, count, i, char = {}, 1, 1
     while 1 do
         if i > #str then break end
-        local char = str:sub(i, #sep + (i - 1))
+        char = str:sub(i, #sep + (i - 1))
         if not parts[count] then parts[count] = "" end
         if char == sep then
             count = count + 1
@@ -49,10 +48,9 @@ function split(str, sep)
 end
 
 function toParts(str, max)
-    local strs = {}
-    local temp = ""
+    local strs, temp, char = {}, ""
     for i = 1, #str do
-        local char = str:sub(i, i)
+        char = str:sub(i, i)
         temp = temp .. char
         if #temp >= max then
             table.insert(strs, temp)
@@ -65,11 +63,10 @@ function toParts(str, max)
 end
 
 function getFile(fs, file)
-    local file = assert(fs.open(file, "rb"))
+    local file, buffer, data = assert(fs.open(file, "rb")), ""
 
-    local buffer = ""
     while 1 do
-        local data = fs.read(file, math.huge)
+        data = fs.read(file, math.huge)
         if not data then break end
         buffer = buffer .. data
     end
@@ -276,8 +273,8 @@ if gpu then
         gui.setText("▒▒▒▒▒▒█▒▒▒▒▒▒", a, 4)
         gui.setText("▒▒▒▒▒███▒▒▒▒▒", a, 5)
         gui.setText("▒▒▒▒██ ██▒▒▒▒", a, 6)
-        gui.setText("▒▒▒███████▒▒▒", a, 7)
-        gui.setText("▒▒████ ████▒▒", a, 8)
+        gui.setText("▒▒▒███ ███▒▒▒", a, 7)
+        gui.setText("▒▒█████████▒▒", a, 8)
         gui.setText("▒█████ █████▒", a, 9)
         gui.setText("█████████████", a, 10)
         gui.setText(str, a, 12)
