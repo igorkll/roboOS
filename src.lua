@@ -447,13 +447,31 @@ if gui then
             for _, file in ipairs(proxy.list(programsPath) or {}) do
                 local full_path = programsPath .. file
                 if proxy.isDirectory(full_path) and proxy.exists(full_path .. "main.lua") then
-                    table.insert(strs, file:sub(1, #file - 1))
+                    local programmName = file:sub(1, #file - 1)
+                    table.insert(strs, programmName .. ":" .. address:sub(1, 6) .. ":" .. (proxy.getLabel() or "noLabel"))
+                    local index = #strs
                     if proxy.exists(full_path .. "doc.txt") then
-                        doc[#strs] = getFile(full_path .. "doc.txt")
+                        doc[index] = getFile(full_path .. "doc.txt")
                     end
-                    table.insert(runs, function()
-                        
-                    end)
+                    runs[index] = function()
+                        while 1 do
+                            gui.setData("programm " .. programmName, doc, strs)
+                            num, scroll = gui.menu(num, scroll)
+                            if num == 1 then
+                                break
+                            elseif num == 2 then
+                                computer.shutdown()
+                            elseif num == 3 then
+                                computer.shutdown(1)
+                            elseif num == 4 then
+                                settings()
+                            elseif num == 5 then
+                                bootToExternalOS()
+                            else
+                                
+                            end
+                        end
+                    end
                 end
             end
         end
@@ -472,7 +490,10 @@ if gui then
             elseif num == 5 then
                 bootToExternalOS()
             else
-
+                if runs[num] then
+                    gui.warn("This Programm Is Not Found")
+                    break
+                end
             end
         end
     end
