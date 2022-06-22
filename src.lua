@@ -196,7 +196,7 @@ if gpu then
         gpu.fill(1, 2, rx, 1, "─")
         gpu.fill(1, ry - 1, rx, 1, "─")
         gpu.fill(docX, 3, 1, ry - 4, "│")
-        gpu.fill(docX + 1, ry // 2, rx - docX, 1, "─")
+        gpu.fill(docX + 1, ry / 2, rx - docX, 1, "─")
         
         local function printDoc(doc, posY)
             local splitedDoc = split(doc or "not found", "\n")
@@ -213,8 +213,8 @@ if gpu then
         end
         gpu.set(docX + 1, 3, "menu doc:")
         printDoc(docs[0], 4)
-        gpu.set(docX + 1, (ry // 2) + 1, "menu point doc:")
-        printDoc(docs[num], (ry // 2) + 2)
+        gpu.set(docX + 1, (ry / 2) + 1, "menu point doc:")
+        printDoc(docs[num], (ry / 2) + 2)
         
         for i, data in ipairs(strs) do
             local posY = i + 2
@@ -295,7 +295,7 @@ if gpu then
 
     function gui.status(str)
         gpu.fill(8, 3, rx - 15, ry - 4, "▒")
-        gui.setText(str, a, ry // 2)
+        gui.setText(str, a, (ry / 2) + 1)
 
         computer.beep(1000, 0.1)
     end
@@ -356,7 +356,7 @@ local function themes()
     local strs = {"white", "black", "exit"}
     local doc = {[0] = "theme selector", "white theme", "black theme"}
     while 1 do
-        gui.setData("settings", doc, strs)
+        gui.setData("theme selector", doc, strs)
         num, scroll = gui.menu(num, scroll)
         if num == 1 then
             setTheme(1)
@@ -505,10 +505,21 @@ local function downloadApp()
     end
     local url = gui.read("url")
     if url then
+        gui.status("downloading")
         local data, err = getInternetFile(url)
         if not data then
             gui.warn(err or "unknown")
             return
+        end
+        
+        local strs = {}
+        local docs = {}
+        local runs = {}
+        for address in component.list"filesystem" do
+            local proxy = component.proxy(address)
+            if not proxy.isReadOnly() then
+                table.insert(runs)
+            end
         end
     end
 end
