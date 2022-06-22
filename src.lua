@@ -487,6 +487,15 @@ if gui then
                         doc[index] = getFile(proxy, full_path .. "doc.txt")
                     end
                     runs[index] = function()
+                        local function check()
+                            local ok, exists = pcall(proxy.exists, full_path .. "main.lua")
+                            if not ok or not exists then
+                                gui.warn("programm is not found")
+                                return 1
+                            end
+                        end
+                        if check() then return 1 end
+
                         local function copy(clone)
                             local strs = {}
                             local addresses = {}
@@ -498,9 +507,29 @@ if gui then
                             table.insert(strs, "exit")
 
                             gui.setData("select target to " .. (clone and "clone " or "copy ") .. programmName, {}, strs)
-                            local num = gui.menu(1, 0)
+                            local num, scroll = gui.menu(1, 0)
                             if not addresses[num] then
                                 return 1
+                            end
+
+                            local name = programmName
+                            if gui.yesno("use new name?") then
+                                gui.draw(num, scroll)
+                                local newname = gui.read()
+                                if newname then
+                                    name = newname
+                                else
+                                    gui.warn("using new name canceled")
+                                end
+                            end
+
+                            if not gui.yesno(clone and "clone?" or "copy?") then
+                                return 1
+                            end
+                            local targetProxy = component.proxy(addresses[num])
+                            
+                            for _, file in ipairs(proxy.list(full_path)) do
+                                
                             end
                         end
 
@@ -508,6 +537,7 @@ if gui then
                         while 1 do
                             gui.setData("programm " .. programmName, {[0] = doc[index]}, {"open", "set to autorun", "clone", "copy", "remove", "rename", "back"})
                             num, scroll = gui.menu(num, scroll)
+                            if check() then return 1 end
                             if num == 1 then
                                 if not runProgramm(proxy, full_path .. "main.lua") then
                                     return 1
