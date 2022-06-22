@@ -489,10 +489,19 @@ if gui then
                     runs[index] = function()
                         local function copy(clone)
                             local strs = {}
-                            
+                            local addresses = {}
+                            for address in component.list"filesystem" do
+                                if not component.invoke(address, "isReadOnly") then
+                                    table.insert(strs, (proxy.getLabel() or "noLabel") .. ":" .. address:sub(1, 6))
+                                end
+                            end
+                            table.insert(strs, "exit")
 
                             gui.setData("select target to " .. (clone and "clone " or "copy ") .. programmName, {}, strs)
                             local num = gui.menu(1, 0)
+                            if not addresses[num] then
+                                return 1
+                            end
                         end
 
                         local num, scroll, refresh = 1, 0
@@ -507,9 +516,10 @@ if gui then
                                 saveFile(proxy, "/roboOS/autorun.cfg", full_path .. "main.lua")
                             elseif num == 3 then
                                 --clone
-                                copy(true)
-                                proxy.remove(full_path)
-                                return 1
+                                if not copy(true) then
+                                    proxy.remove(full_path)
+                                    return 1
+                                end
                             elseif num == 4 then
                                 --copy
                                 copy()
