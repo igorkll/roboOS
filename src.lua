@@ -518,9 +518,23 @@ local function downloadApp()
         for address in component.list"filesystem" do
             local proxy = component.proxy(address)
             if not proxy.isReadOnly() then
-                table.insert(runs)
+                table.insert(runs, function()
+                    local name = gui.read("name to save")
+                    if not name then
+                    elseif name:find"%/" or name:find"%\\" then
+                        local path = "/roboOS/programs/" .. name
+                        if proxy.exists(path) then
+                            gui.warn("this name used")
+                            return
+                        end
+                        proxy.makeDirectory(path)
+                        saveFile(proxy, path .. "")
+                        return 1
+                    end
+                end)
             end
         end
+        table.insert(strs, "exit")
     end
 end
 
@@ -633,14 +647,14 @@ if gui then
                             if gui.yesno"use new name?" then
                                 gui.draw(num, scroll)
                                 local newname = gui.read"new name"
-                                if newname then
-                                    name = newname
+                                if not newname then
+                                    gui.warn"using new name canceled"
+                                    gui.draw(num, scroll)
                                 elseif name:find"%/" or name:find"%\\" then
                                     gui.warn"unsupported char /"
                                     return 1
                                 else
-                                    gui.warn"using new name canceled"
-                                    gui.draw(num, scroll)
+                                    name = newname
                                 end
                             end
 
