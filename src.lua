@@ -441,10 +441,12 @@ local function settings()
 end
 
 local function runProgramm(fs, file)
-    local ok, data = pcall(getFile(fs, file))
+    local ok, data = pcall(getFile, fs, file)
     if not ok or not data then
-        if gui then gui.warn("err to get programm") end
-        return a, "err to get programm"
+        local msg = "err to get programm"
+        --local msg = "err to get programm: " .. (data or "unknown")
+        if gui then gui.warn(msg) end
+        return a, msg
     end
     local code, err = load(data, "=programm")
     if not code then
@@ -479,9 +481,9 @@ if gui then
                         doc[index] = getFile(proxy, full_path .. "doc.txt")
                     end
                     runs[index] = function()
-                        local num, scroll
+                        local num, scroll, refresh = 1, 0
                         while 1 do
-                            gui.setData("programm " .. programmName, {[0] = doc[index], "open", "clone", "copy", "remove", "rename", "back"}, strs)
+                            gui.setData("programm " .. programmName, {[0] = doc[index]}, {"open", "clone", "copy", "remove", "rename", "back"})
                             num, scroll = gui.menu(num, scroll)
                             if num == 1 then
                                 if not runProgramm(proxy, full_path .. "main.lua") then
@@ -493,8 +495,10 @@ if gui then
                                 --copy
                             elseif num == 4 then
                                 --remove
-                                proxy.remove(full_path)
-                                return 1
+                                if gui.yesno("remove?") then
+                                    proxy.remove(full_path)
+                                    return 1
+                                end
                             elseif num == 5 then
                                 --rename
                                 local data = gui.read("new name")
@@ -502,12 +506,14 @@ if gui then
                                     if data:find("%/") or data:find("%\\") then
                                         gui.warn("unsupported char /")
                                     else
-                                        proxy.rename(full_path, fs_path(data) .. "/" .. data)
-                                        return 1
+                                        local old_full_path = full_path
+                                        full_path = fs_path(old_full_path) .. "/" .. data
+                                        proxy.rename(old_full_path, full_path)
+                                        refresh = 1
                                     end
                                 end
                             else
-                                break
+                                return refresh
                             end
                         end
                     end
