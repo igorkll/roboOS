@@ -487,6 +487,10 @@ if gui then
                         doc[index] = getFile(proxy, full_path .. "doc.txt")
                     end
                     runs[index] = function()
+                        local function copy()
+                            
+                        end
+
                         local num, scroll, refresh = 1, 0
                         while 1 do
                             gui.setData("programm " .. programmName, {[0] = doc[index]}, {"open", "set to autorun", "clone", "copy", "remove", "rename", "back"})
@@ -499,8 +503,12 @@ if gui then
                                 saveFile(proxy, "/roboOS/autorun.cfg", full_path .. "main.lua")
                             elseif num == 3 then
                                 --clone
+                                copy()
+                                proxy.remove(full_path)
+                                return 1
                             elseif num == 4 then
                                 --copy
+                                copy()
                             elseif num == 5 then
                                 --remove
                                 if gui.yesno("remove?") then
