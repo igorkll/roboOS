@@ -132,19 +132,22 @@ end
 
 ---------------------------------------------gui
 
+local eventData, rx, ry, label, docs, strs, docX, buffer, str, setTheme
+
 if component.proxy(component.list"gpu"() or "") then
     gui = {}
-    local rx, ry, label, docs, strs, docX = component.proxy(component.list"gpu"() or "").getResolution(), "", "", {}, math.floor((rx / 3) * 2)
+    rx, ry = component.proxy(component.list"gpu"() or "").getResolution()
+    label, docs, strs, docX, buffer, str =  "", "", {}, math.floor((rx / 3) * 2)
 
     function gui.invert()
         component.proxy(component.list"gpu"() or "").setBackground(component.proxy(component.list"gpu"() or "").setForeground(component.proxy(component.list"gpu"() or "").getBackground()))
     end
 
     function gui.read(str)
-        local buffer = ""
+        buffer = ""
         
         local function redraw()
-            local str = str .. ": " .. buffer .. "_"
+            str = str .. ": " .. buffer .. "_"
             while #str > rx do
                 str = str:sub(2, #str)
             end
@@ -157,7 +160,7 @@ if component.proxy(component.list"gpu"() or "") then
         end
 
         while 1 do
-            local eventData = {computer.pullSignal()}
+            eventData = {computer.pullSignal()}
             if eventData[1] == "key_down" then
                 if eventData[4] == 28 then
                     exit()
@@ -191,10 +194,9 @@ if component.proxy(component.list"gpu"() or "") then
         component.proxy(component.list"gpu"() or "").fill(docX + 1, ry / 2, rx - docX, 1, "─")
         
         local function printDoc(doc, posY)
-            local splitedDoc = split(doc or "not found", "\n")
-            local tbl = {}
+            local splitedDoc, tbl, tempTbl = split(doc or "not found", "\n"), {}
             for i, v in ipairs(splitedDoc) do
-                local tempTbl = toParts(v, rx - docX)
+                tempTbl = toParts(v, rx - docX)
                 for i, v in ipairs(tempTbl) do
                     table.insert(tbl, v)
                 end
@@ -222,7 +224,7 @@ if component.proxy(component.list"gpu"() or "") then
     function gui.menu(num, scroll)
         gui.draw(num, scroll)
         while 1 do
-            local eventData = {computer.pullSignal()}
+            eventData = {computer.pullSignal()}
             if eventData[1] == "key_down" then
                 if eventData[4] == 28 then
                     return num, scroll
@@ -278,7 +280,7 @@ if component.proxy(component.list"gpu"() or "") then
         computer.beep(100, 0.2)
 
         while 1 do
-            local eventData = {computer.pullSignal()}
+            eventData = {computer.pullSignal()}
             if eventData[1] == "key_down" and eventData[4] == 28 then
                 break
             end
@@ -311,7 +313,7 @@ if component.proxy(component.list"gpu"() or "") then
             gui.setText("no", 5, (ry / 2) + 2)
             if not selected then gui.invert() end
 
-            local eventData = {computer.pullSignal()}
+            eventData = {computer.pullSignal()}
             if eventData[1] == "key_down" then
                 if eventData[4] == 203 then
                     selected = 1
@@ -328,7 +330,6 @@ end
 
 ---------------------------------------------main
 
-local setTheme
 if gui then
     local currentTheme = getDataPart(1) == "1"
     if currentTheme then
@@ -344,9 +345,7 @@ if gui then
 end
 
 local function themes()
-    local num, scroll = 1, 0
-    local strs = {"white", "black", "exit"}
-    local doc = {[0] = "theme selector", "white theme", "black theme"}
+    local num, scroll, strs, doc = 1, 0, {"white", "black", "exit"}, {[0] = "theme selector", "white theme", "black theme"}
     while 1 do
         gui.setData("theme selector", doc, strs)
         num, scroll = gui.menu(num, scroll)
@@ -364,10 +363,8 @@ local function usermenager()
     local num, scroll = 1, 0
 
     while 1 do
-        local strs = {"add new user", "exit"}
-        local removers = {}
-        local docs = {[0] = "user management(useradd/userremove/userlist)", "press enter to add new user"}
-    
+        local strs, removers, docs = {"add new user", "exit"}, {}, {[0] = "user management(useradd/userremove/userlist)", "press enter to add new user"}
+
         for _, nikname in ipairs{computer.users()} do
             table.insert(strs, 1, nikname)
             table.insert(removers, 1, function()
@@ -519,21 +516,20 @@ local function runProgramm(fs, file)
 end
 
 local function downloadApp()
-    local internet = component.proxy(component.list"internet"() or "")
+    local internet, strs, runs, num, scroll, url, data, err, proxy, name, path = component.proxy(component.list"internet"() or ""), {}, {}, 1, 0
     if not internet then
         gui.warn"internet card is not found"
         return
     end
-    local url = gui.read("url")
+    url = gui.read("url")
     if url then
         gui.status"downloading"
-        local data, err = getInternetFile(url)
+        data, err = getInternetFile(url)
         if not data then
             gui.warn(err or "unknown")
             return
         end
         
-        local strs, runs, proxy, name, path = {}, {}
         for address in component.list"filesystem" do
             proxy = component.proxy(address)
             if not proxy.isReadOnly() then
@@ -561,7 +557,6 @@ local function downloadApp()
 
         gui.setData("select drive to save", {}, strs)
 
-        local num, scroll = 1, 0
         while 1 do
             num, scroll = gui.menu(num, scroll)
             if not runs[num] then break end
@@ -699,12 +694,12 @@ if gui then
                             recurse(full_path, "/roboOS/programs/" .. name)
                         end
 
-                        local num, scroll, refresh = 1, 0
+                        local num, scroll, refresh, old_full_path, setAutorun = 1, 0
                         while 1 do
                             gui.setData("programm " .. programmName, {[0] = doc[index]}, {"open", "set to autorun", "move", "copy", "remove", "rename", "back"})
                             num, scroll = gui.menu(num, scroll)
-                            local old_full_path = full_path
-                            local setAutorun = proxy.exists"/roboOS/autorun.cfg" and getFile(proxy, "/roboOS/autorun.cfg") == (old_full_path .. "main.lua")
+                            old_full_path = full_path
+                            setAutorun = proxy.exists"/roboOS/autorun.cfg" and getFile(proxy, "/roboOS/autorun.cfg") == (old_full_path .. "main.lua")
                             if num == 1 then
                                 if not runProgramm(proxy, full_path .. "main.lua") then
                                     return 1
