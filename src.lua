@@ -417,7 +417,8 @@ local function autorunSettings()
     local doc = {}
     local function getMode()
         if getDataPart(2) == "" then
-            doc[0] = "autoruns settings" .. "currect mode:\npriority external" --нет тут не пропушена \n она тут ненужна и так будет автоперенос
+            doc[0] = "autoruns settings" --нет тут не пропушена \n она тут ненужна и так будет автоперенос
+            .. "currect mode:\npriority external"
         elseif getDataPart(2) == "i" then
             doc[0] = "autoruns settings" .. "currect mode:\npriority internal"
         elseif getDataPart(2) == "b" then
