@@ -293,11 +293,19 @@ if gpu then
         end
     end
 
+    function gui.status(str)
+        gpu.fill(8, 3, rx - 15, ry - 4, "▒")
+        gui.setText(str, a, ry // 2)
+
+        computer.beep(1000, 0.1)
+    end
+
     function gui.yesno(str)
         gui.invert()
         gpu.fill((rx / 2) - 10, (ry / 2) - 1, 20, 5, "▒")
         gui.setText(str, a, (ry / 2))
 
+        computer.beep(5000, 0.1)
         computer.beep(2000, 0.1)
 
         local selected = a
@@ -503,6 +511,33 @@ local function downloadApp()
             return
         end
     end
+end
+
+local autorunProxy, autorunFile
+for address in component.list"filesystem" do
+    local proxy = component.proxy(address)
+    if proxy.exists("/roboOS/autorun.cfg") then
+        local data = getFile(proxy, "/roboOS/autorun.cfg")
+        if proxy.exists(data) then
+            autorunProxy = proxy
+            autorunFile = data
+        end
+    end
+end
+
+if autorunProxy then
+    if gui then
+        gui.status("press alt to skip autorun")
+        local inTime = computer.uptime()
+        repeat
+            local eventData = {computer.pullSignal()}
+            if eventData[1] == "key_down" and eventData[4] == 56 then
+                goto skipautorun
+            end
+        until computer.uptime() - inTime > 1
+    end
+    runProgramm(autorunProxy, autorunFile)
+    ::skipautorun::
 end
 
 if gui then
