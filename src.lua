@@ -528,9 +528,19 @@ if gui then
                             end
                             local targetProxy = component.proxy(addresses[num])
                             
-                            for _, file in ipairs(proxy.list(full_path)) do
-                                
+                            local function recurse(path, toPath)
+                                for _, file in ipairs(proxy.list(path)) do
+                                    local local_full_path = path .. file
+                                    local rePath = toPath .. file
+                                    if proxy.isDirectory(local_full_path) then
+                                        recurse(local_full_path, rePath)
+                                    else
+                                        targetProxy.makeDirectory(fs_path(local_full_path))
+                                        saveFile()
+                                    end
+                                end
                             end
+                            recurse(full_path, )
                         end
 
                         local num, scroll, refresh = 1, 0
