@@ -438,12 +438,12 @@ local function runProgramm(fs, file)
     local data = getFile(fs, file)
     local code, err = load(data, "=programm")
     if not code then
-        gui.warn("err to load programm: " .. err)
+        if gui then gui.warn("err to load programm: " .. err) end
         return a, err
     end
     local ok, err = pcall(code, {file = file, fs = fs})
     if not ok then
-        gui.warn("err to run programm: " .. (err or "unknown"))
+        if gui then gui.warn("err to run programm: " .. (err or "unknown")) end
         return a, err
     end
     return true
