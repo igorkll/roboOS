@@ -78,6 +78,12 @@ function getFile(fs, file)
     return buffer
 end
 
+function saveFile(fs, file, data)
+    local file = assert(fs.open(file, "wb"))
+    fs.write(file, data)
+    fs.close(file)
+end
+
 function bootToOS(fs, file)
     function computer.getBootAddress()
         return fs.address
@@ -483,23 +489,25 @@ if gui then
                     runs[index] = function()
                         local num, scroll, refresh = 1, 0
                         while 1 do
-                            gui.setData("programm " .. programmName, {[0] = doc[index]}, {"open", "clone", "copy", "remove", "rename", "back"})
+                            gui.setData("programm " .. programmName, {[0] = doc[index]}, {"open", "set to autorun", "clone", "copy", "remove", "rename", "back"})
                             num, scroll = gui.menu(num, scroll)
                             if num == 1 then
                                 if not runProgramm(proxy, full_path .. "main.lua") then
                                     return 1
                                 end
                             elseif num == 2 then
-                                --clone
+                                saveFile(proxy, "/roboOS/autorun.cfg", )
                             elseif num == 3 then
-                                --copy
+                                --clone
                             elseif num == 4 then
+                                --copy
+                            elseif num == 5 then
                                 --remove
                                 if gui.yesno("remove?") then
                                     proxy.remove(full_path)
                                     return 1
                                 end
-                            elseif num == 5 then
+                            elseif num == 6 then
                                 --rename
                                 local data = gui.read("new name")
                                 if data then
