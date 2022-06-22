@@ -66,7 +66,7 @@ end
 
 function bootToOS(fs, file)
     function computer.getBootAddress()
-        return address
+        return fs.address
     end
     function computer.getBootGpu()
         return gpu and gpu.address
@@ -376,7 +376,7 @@ local function bootToExternalOS()
         local osList = {}
         local docs = {[0] = "boot to:\nopenOS\nplan9k\nother..."}
 
-        for address in component.list("filesystem") do
+        for address in component.list"filesystem" do
             local proxy = component.proxy(address)
             local function addFile(file)
                 table.insert(strs, 1, (proxy.getLabel() or "noLabel") .. ":" .. address:sub(1, 6) .. ":" .. file)
@@ -385,16 +385,16 @@ local function bootToExternalOS()
                     if ok and exists then
                         bootToOS(proxy, file)
                     else
-                        gui.warn("Operation System Is Not Found")
+                        gui.warn"Operation System Is Not Found"
                         return true
                     end
                 end)
                 table.insert(docs, 1, "label: " .. (proxy.getLabel() or "noLabel") .. "\naddress: " .. address:sub(1, 6) .. "\nfile: " .. file)
             end
-            if proxy.exists("/init.lua") then
-                addFile("/init.lua")
+            if proxy.exists"/init.lua" then
+                addFile"/init.lua"
             end
-            for _, file in ipairs(proxy.list("/boot/kernel") or {}) do
+            for _, file in ipairs(proxy.list"/boot/kernel" or {}) do
                 addFile("/boot/kernel/" .. file)
             end
         end
@@ -436,6 +436,15 @@ if gui then
 
         local strs = {"refresh", "shutdown", "reboot", "settings", "boot to external os"}
         local doc = {[0] = "navigation ↑↓\nok - enter", [5] = "boot to:\nopenOS\nplan9k\nother..."}
+        local runs = {}
+        for address in component.list"filesystem" do
+            local proxy = component.proxy(address)
+            local programsPath = "/roboOS/programs/"
+            for _, file in ipairs(proxy.list(programsPath) or {}) do
+                local full_path = programsPath .. file
+                table.insert()
+            end
+        end
 
         while 1 do
             gui.setData("roboOS", doc, strs)
@@ -450,6 +459,8 @@ if gui then
                 settings()
             elseif num == 5 then
                 bootToExternalOS()
+            else
+
             end
         end
     end
