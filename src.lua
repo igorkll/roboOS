@@ -473,22 +473,20 @@ if gui then
                         doc[index] = getFile(full_path .. "doc.txt")
                     end
                     runs[index] = function()
-                        while 1 do
-                            gui.setData("programm " .. programmName, {[0] = doc[index], "open", "clone", "remove", "rename", "back"}, strs)
-                            num, scroll = gui.menu(num, scroll)
-                            if num == 1 then
-                                break
-                            elseif num == 2 then
-                                computer.shutdown()
-                            elseif num == 3 then
-                                computer.shutdown(1)
-                            elseif num == 4 then
-                                settings()
-                            elseif num == 5 then
-                                bootToExternalOS()
-                            else
-                                
-                            end
+                        gui.setData("programm " .. programmName, {[0] = doc[index], "open", "clone", "copy", "remove", "rename", "back"}, strs)
+                        local num = gui.menu(num, scroll)
+                        if num == 1 then
+                            runProgramm(proxy, full_path .. "main.lua")
+                        elseif num == 2 then
+                            --clone
+                        elseif num == 3 then
+                            --copy
+                        elseif num == 4 then
+                            --remove
+                            proxy.remove(full_path)
+                        elseif num == 5 then
+                            --rename
+                            proxy.rename(full_path, )
                         end
                     end
                 end
