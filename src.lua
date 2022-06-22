@@ -461,13 +461,7 @@ local function bootToExternalOS()
             local function addFile(file)
                 table.insert(strs, 1, (proxy.getLabel() or "noLabel") .. ":" .. address:sub(1, 6) .. ":" .. file)
                 table.insert(osList, 1, function()
-                    local ok, exists = pcall(proxy.exists, file)
-                    if ok and exists then
-                        bootToOS(proxy, file)
-                    else
-                        gui.warn"Operation System Is Not Found"
-                        return 1
-                    end
+                    bootToOS(proxy, file)
                 end)
                 table.insert(docs, 1, "label: " .. (proxy.getLabel() or "noLabel") .. "\naddress: " .. address:sub(1, 6) .. "\nfile: " .. file)
             end
@@ -485,7 +479,7 @@ local function bootToExternalOS()
             if num == #strs then
                 return
             else
-                if osList[num]() then break end
+                osList[num]()
             end
         end
     end
@@ -662,15 +656,6 @@ if gui then
                         doc[index] = doc[index] .. getFile(proxy, full_path .. "doc.txt")
                     end
                     runs[index] = function()
-                        local function check()
-                            local ok, exists = pcall(proxy.exists, full_path .. "main.lua")
-                            if not ok or not exists then
-                                gui.warn"programm is not found"
-                                return 1
-                            end
-                        end
-                        if check() then return 1 end
-
                         local function copy(clone)
                             local strs = {}
                             local addresses = {}
@@ -735,7 +720,6 @@ if gui then
                         while 1 do
                             gui.setData("programm " .. programmName, {[0] = doc[index]}, {"open", "set to autorun", "move", "copy", "remove", "rename", "back"})
                             num, scroll = gui.menu(num, scroll)
-                            if check() then return 1 end
                             local old_full_path = full_path
                             local setAutorun = proxy.exists"/roboOS/autorun.cfg" and getFile(proxy, "/roboOS/autorun.cfg") == (old_full_path .. "main.lua")
                             if num == 1 then
@@ -744,7 +728,6 @@ if gui then
                                 end
                             elseif num == 2 then
                                 if gui.yesno("set autorun?") then
-                                    if check() then return 1 end
                                     saveFile(proxy, "/roboOS/autorun.cfg", full_path .. "main.lua")
                                 end
                             elseif num == 3 then
@@ -764,7 +747,6 @@ if gui then
                             elseif num == 5 then
                                 --remove
                                 if gui.yesno"remove?" then
-                                    if check() then return 1 end
                                     proxy.remove(full_path)
                                     if setAutorun then
                                         proxy.remove"/roboOS/autorun.cfg"
@@ -778,7 +760,6 @@ if gui then
                                     if data:find"%/" or data:find"%\\" then
                                         gui.warn"unsupported char /"
                                     else
-                                        if check() then return 1 end
                                         full_path = fs_path(old_full_path) .. "/" .. data
                                         proxy.rename(old_full_path, full_path)
                                         if setAutorun then
