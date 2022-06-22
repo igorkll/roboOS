@@ -481,10 +481,11 @@ if gui then
                 local full_path = programsPath .. file
                 if proxy.isDirectory(full_path) and proxy.exists(full_path .. "main.lua") then
                     local programmName = file:sub(1, #file - 1)
-                    table.insert(strs, programmName .. ":" .. address:sub(1, 6) .. ":" .. (proxy.getLabel() or "noLabel"))
+                    table.insert(strs, programmName)
                     local index = #strs
+                    doc[index] = "address: " .. address:sub(1, 6) .. "\nlabel: " .. (proxy.getLabel() or "noLabel") .. "\n"
                     if proxy.exists(full_path .. "doc.txt") then
-                        doc[index] = getFile(proxy, full_path .. "doc.txt")
+                        doc[index] = doc[index] .. getFile(proxy, full_path .. "doc.txt")
                     end
                     runs[index] = function()
                         local function check()
