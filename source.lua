@@ -30,10 +30,10 @@ end
 ---------------------------------------------functions
 
 function split(str, sep)
-    local parts, count, i, char = {}, 1, 1
+    local parts, count, i = {}, 1, 1
     while 1 do
         if i > #str then break end
-        char = str:sub(i, #sep + (i - 1))
+        local char = str:sub(i, #sep + (i - 1))
         if not parts[count] then parts[count] = "" end
         if char == sep then
             count = count + 1
@@ -48,9 +48,9 @@ function split(str, sep)
 end
 
 function toParts(str, max)
-    local strs, temp, char = {}, ""
+    local strs, temp = {}, ""
     for i = 1, #str do
-        char = str:sub(i, i)
+        local char = str:sub(i, i)
         temp = temp .. char
         if #temp >= max then
             table.insert(strs, temp)
@@ -63,10 +63,10 @@ function toParts(str, max)
 end
 
 function getFile(fs, file)
-    local file, buffer, data = assert(fs.open(file, "rb")), ""
+    local file, buffer = assert(fs.open(file, "rb")), ""
 
     while 1 do
-        data = fs.read(file, math.huge)
+        local data = fs.read(file, math.huge)
         if not data then break end
         buffer = buffer .. data
     end
@@ -196,8 +196,7 @@ if gpu then
         gpu.fill(docX + 1, ry / 2, rx - docX, 1, "─")
         
         local function printDoc(doc, posY)
-            local splitedDoc = split(doc or "not found", "\n")
-            local tbl = {}
+            local splitedDoc, tbl = split(doc or "not found", "\n"), {}
             for i, v in ipairs(splitedDoc) do
                 local tempTbl = toParts(v, rx - docX)
                 for i, v in ipairs(tempTbl) do
@@ -349,9 +348,8 @@ if gui then
 end
 
 local function themes()
-    local num, scroll = 1, 0
-    local strs = {"white", "black", "exit"}
-    local doc = {[0] = "theme selector", "white theme", "black theme"}
+    local num, scroll, strs, doc = 1, 0, {"white", "black", "exit"}, {[0] = "theme selector", "white theme", "black theme"}
+
     while 1 do
         gui.setData("theme selector", doc, strs)
         num, scroll = gui.menu(num, scroll)
@@ -369,10 +367,8 @@ local function usermenager()
     local num, scroll = 1, 0
 
     while 1 do
-        local strs = {"add new user", "exit"}
-        local removers = {}
-        local docs = {[0] = "user management(useradd/userremove/userlist)", "press enter to add new user"}
-    
+        local strs, removers, docs = {"add new user", "exit"}, {}, {[0] = "user management(useradd/userremove/userlist)", "press enter to add new user"}
+
         for _, nikname in ipairs{computer.users()} do
             table.insert(strs, 1, nikname)
             table.insert(removers, 1, function()
@@ -409,9 +405,8 @@ local function usermenager()
 end
 
 local function autorunSettings()
-    local num, scroll = 1, 0
-    local strs = {"priority external", "priority internal", "only external", "only internal", "disable", "exit"}
-    local doc = {}
+    local num, scroll, strs, doc = 1, 0, {"priority external", "priority internal", "only external", "only internal", "disable", "exit"}, {}
+
     local function getMode()
         if getDataPart(2) == "" then
             doc[0] = "autoruns settings" --нет тут не пропушена \n она тут ненужна и так будет автоперенос
@@ -449,10 +444,7 @@ end
 
 local function bootToExternalOS()
     while 1 do
-        local num, scroll = 1, 0
-        local strs = {"exit"}
-        local osList = {}
-        local docs = {[0] = "boot to:\nopenOS\nplan9k\nother..."}
+        local num, scroll, strs, osList, docs = 1, 0, {"exit"}, {}, {[0] = "boot to:\nopenOS\nplan9k\nother..."}
 
         for address in component.list"filesystem" do
             local proxy = component.proxy(address)
@@ -484,9 +476,8 @@ local function bootToExternalOS()
 end
 
 local function settings()
-    local num, scroll = 1, 0
-    local strs = {"autorun", "usermenager", "theme", "exit"}
-    local doc = {"set autorun mode and autorun programm", "user management(useradd/userremove/userlist)", "theme selector"}
+    local num, scroll, strs, doc = 1, 0, {"autorun", "usermenager", "theme", "exit"}, {"set autorun mode and autorun programm", "user management(useradd/userremove/userlist)", "theme selector"}
+
     while 1 do
         gui.setData("settings", doc, strs)
         num, scroll = gui.menu(num, scroll)
@@ -538,8 +529,8 @@ local function downloadApp()
             return
         end
         
-        local strs = {}
-        local runs = {}
+        local strs, runs = {}, {}
+
         for address in component.list"filesystem" do
             local proxy = component.proxy(address)
             if not proxy.isReadOnly() then
@@ -578,7 +569,7 @@ end
 
 local autorunProxy, autorunFile
 if getDataPart(2) ~= "d" then --is not disable
-    local internal, external = {}, {}
+    local internal, external, lists = {}, {}, {}
     do
         local deviceinfo = computer.getDeviceInfo()
         for address in component.list"filesystem" do
@@ -589,7 +580,6 @@ if getDataPart(2) ~= "d" then --is not disable
             end
         end
     end
-    local lists = {}
     if getDataPart(2) == "" then --priority external
         table.insert(lists, external)
         table.insert(lists, internal)
@@ -635,14 +625,10 @@ end
 
 if gui then
     while 1 do
-        local num, scroll = 1, 0
+        local num, scroll, strs, doc, runs = 1, 0, {"refresh", "shutdown", "reboot", "settings", "boot to external os", "download programm"}, {[0] = "navigation ↑↓\nok - enter", [5] = "boot to:\nopenOS\nplan9k\nother...", [6] = "download programm from internet used internet-card"}, {}
 
-        local strs = {"refresh", "shutdown", "reboot", "settings", "boot to external os", "download programm"}
-        local doc = {[0] = "navigation ↑↓\nok - enter", [5] = "boot to:\nopenOS\nplan9k\nother...", [6] = "download programm from internet used internet-card"}
-        local runs = {}
         for address in component.list"filesystem" do
-            local proxy = component.proxy(address)
-            local programsPath = "/roboOS/programs/"
+            local proxy, programsPath = component.proxy(address), "/roboOS/programs/"
             for _, file in ipairs(proxy.list(programsPath) or {}) do
                 local full_path = programsPath .. file
                 if proxy.isDirectory(full_path) and proxy.exists(full_path .. "main.lua") then
