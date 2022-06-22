@@ -496,7 +496,7 @@ if gui then
                                     return 1
                                 end
                             elseif num == 2 then
-                                saveFile(proxy, "/roboOS/autorun.cfg", )
+                                saveFile(proxy, "/roboOS/autorun.cfg", full_path .. "main.lua")
                             elseif num == 3 then
                                 --clone
                             elseif num == 4 then
