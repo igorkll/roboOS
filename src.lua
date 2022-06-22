@@ -103,6 +103,12 @@ function bootToOS(fs, file)
     computer.shutdown()
 end
 
+function fs_path(path)
+    local splited = split(path, "/")
+    if splited[#splited] == "" then splited[#splited] = nil end
+    return table.concat({table.unpack(splited, 1, #splited - 1)}, "/")
+end
+
 ---------------------------------------------gui
 
 if gpu then
@@ -473,20 +479,24 @@ if gui then
                         doc[index] = getFile(full_path .. "doc.txt")
                     end
                     runs[index] = function()
-                        gui.setData("programm " .. programmName, {[0] = doc[index], "open", "clone", "copy", "remove", "rename", "back"}, strs)
-                        local num = gui.menu(num, scroll)
-                        if num == 1 then
-                            runProgramm(proxy, full_path .. "main.lua")
-                        elseif num == 2 then
-                            --clone
-                        elseif num == 3 then
-                            --copy
-                        elseif num == 4 then
-                            --remove
-                            proxy.remove(full_path)
-                        elseif num == 5 then
-                            --rename
-                            proxy.rename(full_path, )
+                        local num, scroll
+                        while 1 do
+                            gui.setData("programm " .. programmName, {[0] = doc[index], "open", "clone", "copy", "remove", "rename", "back"}, strs)
+                            num, scroll = gui.menu(num, scroll)
+                            if num == 1 then
+                                runProgramm(proxy, full_path .. "main.lua")
+                            elseif num == 2 then
+                                --clone
+                            elseif num == 3 then
+                                --copy
+                            elseif num == 4 then
+                                --remove
+                                proxy.remove(full_path)
+                            elseif num == 5 then
+                                --rename
+                                local 
+                                proxy.rename(full_path, )
+                            end
                         end
                     end
                 end
