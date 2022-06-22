@@ -239,15 +239,15 @@ if gpu then
 
     function gui.warn(str)
         gpu.fill(8, 3, rx - 15, ry - 4, "▒")
-        gui.setText("▒▒▒▒▒▒█▒▒▒▒▒▒", nil, 4)
-        gui.setText("▒▒▒▒▒███▒▒▒▒▒", nil, 5)
-        gui.setText("▒▒▒▒██ ██▒▒▒▒", nil, 6)
-        gui.setText("▒▒▒███████▒▒▒", nil, 7)
-        gui.setText("▒▒████ ████▒▒", nil, 8)
-        gui.setText("▒█████ █████▒", nil, 9)
-        gui.setText("█████████████", nil, 10)
-        gui.setText(str, nil, 12)
-        gui.setText("Press Enter To Continue", nil, 13)
+        gui.setText("▒▒▒▒▒▒█▒▒▒▒▒▒", a, 4)
+        gui.setText("▒▒▒▒▒███▒▒▒▒▒", a, 5)
+        gui.setText("▒▒▒▒██ ██▒▒▒▒", a, 6)
+        gui.setText("▒▒▒███████▒▒▒", a, 7)
+        gui.setText("▒▒████ ████▒▒", a, 8)
+        gui.setText("▒█████ █████▒", a, 9)
+        gui.setText("█████████████", a, 10)
+        gui.setText(str, a, 12)
+        gui.setText("Press Enter To Continue", a, 13)
 
         computer.beep(100, 0.2)
 
@@ -262,11 +262,11 @@ if gpu then
     function gui.yesno(str)
         gui.invert()
         gpu.fill((rx / 2) - 10, (ry / 2) - 1, 20, 5, "▒")
-        gui.setText(str, nil, (ry / 2))
+        gui.setText(str, a, (ry / 2))
 
         computer.beep(2000, 0.1)
 
-        local selected = false
+        local selected = a
 
         while true do
             if selected then gui.invert() end
@@ -282,7 +282,7 @@ if gpu then
                 if eventData[4] == 203 then
                     selected = true
                 elseif eventData[4] == 205 then
-                    selected = false
+                    selected = a
                 elseif eventData[4] == 28 then
                     gui.invert()
                     return selected
@@ -437,6 +437,16 @@ end
 local function runProgramm(fs, file)
     local data = getFile(fs, file)
     local code, err = load(data, "=programm")
+    if not code then
+        gui.warn("err to load programm: " .. err)
+        return a, err
+    end
+    local ok, err = pcall(code, {file = file, fs = fs})
+    if not ok then
+        gui.warn("err to run programm: " .. (err or "unknown"))
+        return a, err
+    end
+    return true
 end
 
 if gui then
