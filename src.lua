@@ -542,6 +542,10 @@ if gui then
                                     end
                                 end
                             end
+                            if targetProxy.exists("/roboOS/" .. name) then
+                                gui.warn("this name used")
+                                return 1
+                            end
                             recurse(full_path, "/roboOS/" .. name)
                         end
 
