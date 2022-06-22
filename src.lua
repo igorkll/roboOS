@@ -476,7 +476,7 @@ if gui then
                     table.insert(strs, programmName .. ":" .. address:sub(1, 6) .. ":" .. (proxy.getLabel() or "noLabel"))
                     local index = #strs
                     if proxy.exists(full_path .. "doc.txt") then
-                        doc[index] = getFile(full_path .. "doc.txt")
+                        doc[index] = getFile(proxy, full_path .. "doc.txt")
                     end
                     runs[index] = function()
                         local num, scroll
@@ -529,7 +529,7 @@ if gui then
             elseif num == 5 then
                 bootToExternalOS()
             else
-                if runs[num] then
+                if runs[num]() then
                     break
                 end
             end
