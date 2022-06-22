@@ -513,28 +513,39 @@ local function downloadApp()
         end
         
         local strs = {}
-        local docs = {}
         local runs = {}
         for address in component.list"filesystem" do
             local proxy = component.proxy(address)
             if not proxy.isReadOnly() then
                 table.insert(runs, function()
                     local name = gui.read("name to save")
-                    if not name then
-                    elseif name:find"%/" or name:find"%\\" then
-                        local path = "/roboOS/programs/" .. name
-                        if proxy.exists(path) then
-                            gui.warn("this name used")
-                            return
+                    if name then
+                        if name:find"%/" or name:find"%\\" then
+                            gui.status"unsupported char /"
+                        else
+                            local path = "/roboOS/programs/" .. name
+                            if proxy.exists(path) then
+                                gui.warn("this name used")
+                                return
+                            end
+                            proxy.makeDirectory(path)
+                            saveFile(proxy, path .. "/main.lua", data)
+                            return 1
                         end
-                        proxy.makeDirectory(path)
-                        saveFile(proxy, path .. "")
-                        return 1
                     end
                 end)
+                table.insert(strs, (proxy.getLabel() or "noLabel") .. ":" .. address:sub(1, 6))
             end
         end
         table.insert(strs, "exit")
+
+        gui.setData("select drive to save", {}, strs)
+
+        local num, scroll
+        while 1 do
+            num, scroll = gui.menu(num, scroll)
+            if not runs[num] or runs[num]() then break end
+        end
     end
 end
 
