@@ -518,6 +518,8 @@ if gui then
                                 local newname = gui.read()
                                 if newname then
                                     name = newname
+                                elseif name:find("%/") or name:find("%\\") then
+                                    gui.warn("unsupported char /")
                                 else
                                     gui.warn("using new name canceled")
                                 end
@@ -535,12 +537,12 @@ if gui then
                                     if proxy.isDirectory(local_full_path) then
                                         recurse(local_full_path, rePath)
                                     else
-                                        targetProxy.makeDirectory(fs_path(local_full_path))
-                                        saveFile()
+                                        targetProxy.makeDirectory(fs_path(rePath))
+                                        saveFile(targetProxy, rePath, getFile(proxy, local_full_path))
                                     end
                                 end
                             end
-                            recurse(full_path, )
+                            recurse(full_path, "/roboOS/" .. name)
                         end
 
                         local num, scroll, refresh = 1, 0
