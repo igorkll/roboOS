@@ -64,7 +64,7 @@ function toParts(str, max)
     return strs
 end
 
-function bootToOS(address, file)
+function bootToOS(fs, file)
     function computer.getBootAddress()
         return address
     end
@@ -85,7 +85,6 @@ function bootToOS(address, file)
     function computer.setBootFile()
     end
 
-    local fs = component.proxy(address)
     local file = assert(fs.open(file, "rb"))
 
     local buffer = ""
@@ -104,16 +103,8 @@ end
 
 if gpu then
     gui = {}
-    local label, docs, strs, docX = "", "", {}
-
     local rx, ry = gpu.getResolution()
-
-    function gui.setResolution(x, y)
-        gpu.setResolution(x, y)
-        rx, ry = x, y
-        docX = math.floor((x / 3) * 2)
-    end
-    gui.setResolution(gpu.getResolution())
+    local label, docs, strs, docX = "", "", {}, math.floor((rx / 3) * 2)
 
     function gui.invert()
         gpu.setBackground(gpu.setForeground(gpu.getBackground()))
@@ -165,21 +156,28 @@ if gpu then
         gpu.fill(1, 1, rx, ry, " ")
         gpu.set(1, 1, label)
         gpu.fill(1, 2, rx, 1, "─")
-        gpu.fill(1, ry - 1, rx, 1, "─")        
+        gpu.fill(1, ry - 1, rx, 1, "─")
         gpu.fill(docX, 3, 1, ry - 4, "│")
+        gpu.fill(docX + 1, ry // 2, rx - docX, 1, "─")
         
-        local splitedDoc = split(docs[num] or docs[0] or "", "\n")
-        local tbl = {}
-        for i, v in ipairs(splitedDoc) do
-            local tempTbl = toParts(v, rx - docX)
-            for i, v in ipairs(tempTbl) do
-                table.insert(tbl, v)
+        local function printDoc(doc, posY)
+            local splitedDoc = split(doc or "not found", "\n")
+            local tbl = {}
+            for i, v in ipairs(splitedDoc) do
+                local tempTbl = toParts(v, rx - docX)
+                for i, v in ipairs(tempTbl) do
+                    table.insert(tbl, v)
+                end
+            end
+            for i, data in ipairs(tbl) do
+                gpu.set(docX + 1, (i + posY) - 1, data)
             end
         end
-
-        for i, data in ipairs(tbl) do
-            gpu.set(docX + 1, i + 2, data)
-        end
+        gpu.set(docX + 1, 3, "menu doc:")
+        printDoc(docs[0], 4)
+        gpu.set(docX + 1, (ry // 2) + 1, "menu point doc:")
+        printDoc(docs[num], (ry // 2) + 2)
+        
         for i, data in ipairs(strs) do
             local posY = i + 2
             posY = posY - scroll
@@ -232,19 +230,18 @@ if gpu then
     end
 
     function gui.setText(str, posX, posY)
-        gpu.set((posX or 0) + math.floor(((rx / 2) - ((#str - 1) / 2)) + 0.5), posY or math.floor((ry / 2) + 0.5), str)
+        gpu.set((posX or 0) + math.floor(((rx / 2) - ((unicode.len(str) - 1) / 2)) + 0.5), posY or math.floor((ry / 2) + 0.5), str)
     end
 
     function gui.warn(str)
         gpu.fill(8, 3, rx - 15, ry - 4, "▒")
-        local logoPos = math.ceil((rx / 2) - (13 / 2))
-        gpu.set(logoPos, 4,  "▒▒▒▒▒▒█▒▒▒▒▒▒")
-        gpu.set(logoPos, 5,  "▒▒▒▒▒███▒▒▒▒▒")
-        gpu.set(logoPos, 6,  "▒▒▒▒██ ██▒▒▒▒")
-        gpu.set(logoPos, 7,  "▒▒▒███████▒▒▒")
-        gpu.set(logoPos, 8,  "▒▒████ ████▒▒")
-        gpu.set(logoPos, 9,  "▒█████ █████▒")
-        gpu.set(logoPos, 10, "█████████████")
+        gui.setText("▒▒▒▒▒▒█▒▒▒▒▒▒", nil, 4)
+        gui.setText("▒▒▒▒▒███▒▒▒▒▒", nil, 5)
+        gui.setText("▒▒▒▒██ ██▒▒▒▒", nil, 6)
+        gui.setText("▒▒▒███████▒▒▒", nil, 7)
+        gui.setText("▒▒████ ████▒▒", nil, 8)
+        gui.setText("▒█████ █████▒", nil, 9)
+        gui.setText("█████████████", nil, 10)
         gui.setText(str, nil, 12)
         gui.setText("Press Enter To Continue", nil, 13)
 
@@ -269,11 +266,11 @@ if gpu then
 
         while true do
             if selected then gui.invert() end
-            gpu.set((rx / 2) - 9, (ry / 2) + 2, "yes")
+            gui.setText("yes", -5, (ry / 2) + 2)
             if selected then gui.invert() end
 
             if not selected then gui.invert() end
-            gpu.set((rx / 2) + 7, (ry / 2) + 2, "no")
+            gui.setText("no", 5, (ry / 2) + 2)
             if not selected then gui.invert() end
 
             local eventData = {computer.pullSignal()}
@@ -299,6 +296,7 @@ local function usermenager()
     while 1 do
         local strs = {"add new user", "exit"}
         local removers = {}
+        local docs = {[0] = "user management(useradd/userremove/userlist)", "press enter to add new user"}
     
         for _, nikname in ipairs({computer.users()}) do
             table.insert(strs, 1, nikname)
@@ -314,9 +312,10 @@ local function usermenager()
                     end
                 end
             end)
+            table.insert(docs, 1, "press enter to remove this user")
         end
 
-        gui.setData("usermenager", {[0] = "user management(useradd/userremove/userlist)"}, strs)
+        gui.setData("usermenager", docs, strs)
         num, scroll = gui.menu(num, scroll)
         if num == #strs then
             break
@@ -340,32 +339,42 @@ end
 
 local function bootToExternalOS()
     local num, scroll = 1, 0
-    local strs = {"exit"}
-    local osList = {}
-
-    for address in component.list("filesystem") do
-        local proxy = component.proxy(address)
-        local function addFile(file)
-            table.insert(strs, 1, (proxy.getLabel() or "noLabel") .. ":" .. address:sub(1, 6) .. ":" .. file)
-            table.insert(osList, 1, function()
-                bootToOS(address, file)
-            end)
-        end
-        if proxy.exists("/init.lua") then
-            addFile("/init.lua")
-        end
-        for _, file in ipairs(proxy.list("/boot/kernel") or {}) do
-            addFile("/boot/kernel/" .. file)
-        end
-    end
-
     while 1 do
-        gui.setData("boot to external os", {[0] = "boot to an external OS for example openOS"}, strs)
-        num, scroll = gui.menu(num, scroll)
-        if num == #strs then
-            break
-        else
-            osList[num]()
+        local strs = {"exit"}
+        local osList = {}
+        local docs = {[0] = "boot to:\nopenOS\nplan9k\nother..."}
+
+        for address in component.list("filesystem") do
+            local proxy = component.proxy(address)
+            local function addFile(file)
+                table.insert(strs, 1, (proxy.getLabel() or "noLabel") .. ":" .. address:sub(1, 6) .. ":" .. file)
+                table.insert(osList, 1, function()
+                    local ok, exists = pcall(proxy.exists, file)
+                    if ok and exists then
+                        bootToOS(proxy, file)
+                    else
+                        gui.warn("Operation System Is Not Found")
+                        return true
+                    end
+                end)
+                table.insert(docs, 1, "label: " .. (proxy.getLabel() or "noLabel") .. "\naddress: " .. address:sub(1, 6) .. "\nfile: " .. file)
+            end
+            if proxy.exists("/init.lua") then
+                addFile("/init.lua")
+            end
+            for _, file in ipairs(proxy.list("/boot/kernel") or {}) do
+                addFile("/boot/kernel/" .. file)
+            end
+        end
+
+        while 1 do
+            gui.setData("boot to external os", docs, strs)
+            num, scroll = gui.menu(num, scroll)
+            if num == #strs then
+                return
+            else
+                if osList[num]() then break end
+            end
         end
     end
 end
@@ -387,25 +396,27 @@ local function settings()
     end
 end
 
-while 1 do
-    local num, scroll = 1, 0
-
-    local strs = {"refresh", "shutdown", "reboot", "settings", "boot to external os"}
-    local doc = {[0] = "main doc:\nnavigation ↑↓\nok - enter", [4] = "boot to an external OS for example openOS"}
-
+if gui then
     while 1 do
-        gui.setData("roboOS", doc, strs)
-        num, scroll = gui.menu(num, scroll)
-        if num == 1 then
-            break
-        elseif num == 2 then
-            computer.shutdown()
-        elseif num == 3 then
-            computer.shutdown(1)
-        elseif num == 4 then
-            settings()
-        elseif num == 5 then
-            bootToExternalOS()
+        local num, scroll = 1, 0
+
+        local strs = {"refresh", "shutdown", "reboot", "settings", "boot to external os"}
+        local doc = {[0] = "navigation ↑↓\nok - enter", [5] = "boot to:\nopenOS\nplan9k\nother..."}
+
+        while 1 do
+            gui.setData("roboOS", doc, strs)
+            num, scroll = gui.menu(num, scroll)
+            if num == 1 then
+                break
+            elseif num == 2 then
+                computer.shutdown()
+            elseif num == 3 then
+                computer.shutdown(1)
+            elseif num == 4 then
+                settings()
+            elseif num == 5 then
+                bootToExternalOS()
+            end
         end
     end
 end
