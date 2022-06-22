@@ -105,7 +105,7 @@ end
 
 function fs_path(path)
     local splited = split(path, "/")
-    if splited[#splited] == "" then splited[#splited] = nil end
+    if splited[#splited] == "" then splited[#splited] = a end
     return table.concat({table.unpack(splited, 1, #splited - 1)}, "/")
 end
 
@@ -443,8 +443,8 @@ end
 local function runProgramm(fs, file)
     local ok, data = pcall(getFile(fs, file))
     if not ok or not data then
-        if gui then gui.warn("err to load programm") end
-        return a, "err to load programm"
+        if gui then gui.warn("err to get programm") end
+        return a, "err to get programm"
     end
     local code, err = load(data, "=programm")
     if not code then
@@ -484,7 +484,9 @@ if gui then
                             gui.setData("programm " .. programmName, {[0] = doc[index], "open", "clone", "copy", "remove", "rename", "back"}, strs)
                             num, scroll = gui.menu(num, scroll)
                             if num == 1 then
-                                runProgramm(proxy, full_path .. "main.lua")
+                                if not runProgramm(proxy, full_path .. "main.lua") then
+                                    return 1
+                                end
                             elseif num == 2 then
                                 --clone
                             elseif num == 3 then
@@ -492,10 +494,20 @@ if gui then
                             elseif num == 4 then
                                 --remove
                                 proxy.remove(full_path)
+                                return 1
                             elseif num == 5 then
                                 --rename
-                                local 
-                                proxy.rename(full_path, )
+                                local data = gui.read("new name")
+                                if data then
+                                    if data:find("%/") or data:find("%\\") then
+                                        gui.warn("unsupported char /")
+                                    else
+                                        proxy.rename(full_path, fs_path(data) .. "/" .. data)
+                                        return 1
+                                    end
+                                end
+                            else
+                                break
                             end
                         end
                     end
@@ -518,7 +530,6 @@ if gui then
                 bootToExternalOS()
             else
                 if runs[num] then
-                    gui.warn("This Programm Is Not Found")
                     break
                 end
             end
