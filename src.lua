@@ -1,8 +1,8 @@
 ---------------------------------------------gpu
 
-local gpu = component.proxy(component.list("gpu")() or "")
+local gpu = component.proxy(component.list"gpu"() or "")
 if gpu then
-    if gpu.bind(component.list("screen")() or "", true) then
+    if gpu.bind(component.list"screen"() or "", true) then
         gpu.setResolution(50, 16)
     else
         gpu = a
@@ -11,7 +11,7 @@ end
 
 ---------------------------------------------eeprom
 
-local eeprom = component.proxy(component.list("eeprom")())
+local eeprom = component.proxy(component.list"eeprom"())
 
 function getDataPart(part)
     return split(eeprom.getData(), "\n")[part] or ""
@@ -19,7 +19,7 @@ end
 
 function setDataPart(part, newdata)
     if getDataPart(part) == newdata then return end
-    if newdata:find("\n") then error("\\n char") end
+    if newdata:find"\n" then error"\\n char" end
     local parts = split(eeprom.getData(), "\n")
     for i = part, 1, -1 do
         if not parts[i] then parts[i] = "" end
@@ -346,10 +346,10 @@ local function usermenager()
         local removers = {}
         local docs = {[0] = "user management(useradd/userremove/userlist)", "press enter to add new user"}
     
-        for _, nikname in ipairs({computer.users()}) do
+        for _, nikname in ipairs{computer.users()} do
             table.insert(strs, 1, nikname)
             table.insert(removers, 1, function()
-                if gui.yesno("remove user?") then
+                if gui.yesno"remove user?" then
                     for i, v in ipairs(strs) do
                         if v == nikname then
                             table.remove(strs, i)
@@ -368,7 +368,7 @@ local function usermenager()
         if num == #strs then
             break
         elseif num == (#strs - 1) then
-            local nikname = gui.read("nikname")
+            local nikname = gui.read"nikname"
             if nikname then
                 local ok, err = computer.addUser(nikname)
                 if not ok then
@@ -491,7 +491,7 @@ if gui then
                         local function check()
                             local ok, exists = pcall(proxy.exists, full_path .. "main.lua")
                             if not ok or not exists then
-                                gui.warn("programm is not found")
+                                gui.warn"programm is not found"
                                 return 1
                             end
                         end
@@ -516,16 +516,16 @@ if gui then
                             end
 
                             local name = programmName
-                            if gui.yesno("use new name?") then
+                            if gui.yesno"use new name?" then
                                 gui.draw(num, scroll)
-                                local newname = gui.read("new name")
+                                local newname = gui.read"new name"
                                 if newname then
                                     name = newname
-                                elseif name:find("%/") or name:find("%\\") then
-                                    gui.warn("unsupported char /")
+                                elseif name:find"%/" or name:find"%\\" then
+                                    gui.warn"unsupported char /"
                                     return 1
                                 else
-                                    gui.warn("using new name canceled")
+                                    gui.warn"using new name canceled"
                                     gui.draw(num, scroll)
                                 end
                             end
@@ -551,7 +551,7 @@ if gui then
                                 end
                             end
                             if targetProxy.exists("/roboOS/programs/" .. name) then
-                                gui.warn("this name used")
+                                gui.warn"this name used"
                                 return 1
                             end
                             recurse(full_path, "/roboOS/programs/" .. name)
@@ -563,7 +563,7 @@ if gui then
                             num, scroll = gui.menu(num, scroll)
                             if check() then return 1 end
                             local old_full_path = full_path
-                            local setAutorun = proxy.exists("/roboOS/autorun.cfg") and getFile(proxy, "/roboOS/autorun.cfg") == (old_full_path .. "main.lua")
+                            local setAutorun = proxy.exists"/roboOS/autorun.cfg" and getFile(proxy, "/roboOS/autorun.cfg") == (old_full_path .. "main.lua")
                             if num == 1 then
                                 if not runProgramm(proxy, full_path .. "main.lua") then
                                     return 1
@@ -575,7 +575,7 @@ if gui then
                                 if not copy(1) then
                                     proxy.remove(full_path)
                                     if setAutorun then
-                                        proxy.remove("/roboOS/autorun.cfg")
+                                        proxy.remove"/roboOS/autorun.cfg"
                                     end
                                     return 1
                                 end
@@ -586,20 +586,20 @@ if gui then
                                 end
                             elseif num == 5 then
                                 --remove
-                                if gui.yesno("remove?") then
+                                if gui.yesno"remove?" then
                                     if check() then return 1 end
                                     proxy.remove(full_path)
                                     if setAutorun then
-                                        proxy.remove("/roboOS/autorun.cfg")
+                                        proxy.remove"/roboOS/autorun.cfg"
                                     end
                                     return 1
                                 end
                             elseif num == 6 then
                                 --rename
-                                local data = gui.read("new name")
+                                local data = gui.read"new name"
                                 if data then
-                                    if data:find("%/") or data:find("%\\") then
-                                        gui.warn("unsupported char /")
+                                    if data:find"%/" or data:find"%\\" then
+                                        gui.warn"unsupported char /"
                                     else
                                         if check() then return 1 end
                                         full_path = fs_path(old_full_path) .. "/" .. data
