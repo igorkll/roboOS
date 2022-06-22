@@ -627,30 +627,24 @@ end
 
 if gui then
     while 1 do
-        local num, scroll, strs = 1, 0, {"refresh", "shutdown", "reboot", "settings", "boot to external os", "download programm"}
-
-        local  = 
-        local doc = {[0] = "navigation ↑↓\nok - enter", [5] = "boot to:\nopenOS\nplan9k\nother...", [6] = "download programm from internet used internet-card"}
-        local runs = {}
+        local num, scroll, strs, doc, runs = 1, 0, {"refresh", "shutdown", "reboot", "settings", "boot to external os", "download programm"}, {[0] = "navigation ↑↓\nok - enter", [5] = "boot to:\nopenOS\nplan9k\nother...", [6] = "download programm from internet used internet-card"}, {}
         for address in component.list"filesystem" do
-            local proxy = component.proxy(address)
-            local programsPath = "/roboOS/programs/"
+            local proxy, programsPath, full_path, programmName, index = component.proxy(address), "/roboOS/programs/"
             for _, file in ipairs(proxy.list(programsPath) or {}) do
-                local full_path = programsPath .. file
+                full_path = programsPath .. file
                 if proxy.isDirectory(full_path) and proxy.exists(full_path .. "main.lua") then
-                    local programmName = file:sub(1, #file - 1)
+                    programmName = file:sub(1, #file - 1)
                     table.insert(strs, programmName)
-                    local index = #strs
+                    index = #strs
                     doc[index] = "address: " .. address:sub(1, 6) .. "\nlabel: " .. (proxy.getLabel() or "noLabel") .. "\n"
                     if proxy.exists(full_path .. "doc.txt") then
                         doc[index] = doc[index] .. getFile(proxy, full_path .. "doc.txt")
                     end
                     runs[index] = function()
                         local function copy(clone)
-                            local strs = {}
-                            local addresses = {}
+                            local strs, addresses, proxy, num, scroll, name, newname, targetProxy = {}, {}
                             for address in component.list"filesystem" do
-                                local proxy = component.proxy(address)
+                                proxy = component.proxy(address)
                                 if not proxy.isReadOnly() then
                                     table.insert(strs, (proxy.getLabel() or "noLabel") .. ":" .. address:sub(1, 6))
                                     table.insert(addresses, address)
@@ -659,15 +653,15 @@ if gui then
                             table.insert(strs, "exit")
 
                             gui.setData("select target to " .. (clone and "move " or "copy ") .. programmName, {}, strs)
-                            local num, scroll = gui.menu(1, 0)
+                            num, scroll = gui.menu(1, 0)
                             if not addresses[num] then
                                 return 1
                             end
 
-                            local name = programmName
+                            name = programmName
                             if gui.yesno"use new name?" then
                                 gui.draw(num, scroll)
-                                local newname = gui.read"new name"
+                                newname = gui.read"new name"
                                 if not newname then
                                     gui.warn"using new name canceled"
                                     gui.draw(num, scroll)
@@ -682,12 +676,11 @@ if gui then
                             if not gui.yesno(clone and "move?" or "copy?") then
                                 return 1
                             end
-                            local targetProxy = component.proxy(addresses[num])
+                            targetProxy = component.proxy(addresses[num])
                             
                             local function recurse(path, toPath)
                                 for _, file in ipairs(proxy.list(path)) do
-                                    local local_full_path = path .. file
-                                    local rePath = toPath .. "/" .. file
+                                    local local_full_path, rePath = path .. file, toPath .. "/" .. file
                                     if proxy.isDirectory(local_full_path) then
                                         recurse(local_full_path, rePath)
                                     else
