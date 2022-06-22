@@ -115,6 +115,28 @@ function fs_path(path)
     return table.concat({table.unpack(splited, 1, #splited - 1)}, "/")
 end
 
+function getInternetFile(url)--взято из mineOS efi от игорь тимофеев
+    local handle, data, result, reason = component.proxy(component.list("internet")()).request(url), ""
+    if handle then
+        while 1 do
+            result, reason = handle.read(math.huge)	
+            if result then
+                data = data .. result
+            else
+                handle.close()
+                
+                if reason then
+                    return a, reason
+                else
+                    return data
+                end
+            end
+        end
+    else
+        return a, "Unvalid Address"
+    end
+end
+
 ---------------------------------------------gui
 
 if gpu then
@@ -263,7 +285,7 @@ if gpu then
 
         computer.beep(100, 0.2)
 
-        while true do
+        while 1 do
             local eventData = {computer.pullSignal()}
             if eventData[1] == "key_down" and eventData[4] == 28 then
                 break
@@ -280,7 +302,7 @@ if gpu then
 
         local selected = a
 
-        while true do
+        while 1 do
             if selected then gui.invert() end
             gui.setText("yes", -5, (ry / 2) + 2)
             if selected then gui.invert() end
@@ -292,7 +314,7 @@ if gpu then
             local eventData = {computer.pullSignal()}
             if eventData[1] == "key_down" then
                 if eventData[4] == 203 then
-                    selected = true
+                    selected = 1
                 elseif eventData[4] == 205 then
                     selected = a
                 elseif eventData[4] == 28 then
@@ -402,7 +424,7 @@ local function bootToExternalOS()
                         bootToOS(proxy, file)
                     else
                         gui.warn"Operation System Is Not Found"
-                        return true
+                        return 1
                     end
                 end)
                 table.insert(docs, 1, "label: " .. (proxy.getLabel() or "noLabel") .. "\naddress: " .. address:sub(1, 6) .. "\nfile: " .. file)
@@ -464,15 +486,31 @@ local function runProgramm(fs, file)
         if gui then gui.warn("err to run programm: " .. (err or "unknown")) end
         return a, (err or "unknown")
     end
-    return true
+    return 1
+end
+
+local function downloadApp()
+    local internet = component.proxy(component.list("internet")() or "")
+    if not internet then
+        gui.warn"internet card is not found"
+        return
+    end
+    local url = gui.read("url")
+    if url then
+        local data, err = getInternetFile(url)
+        if not data then
+            gui.warn(err or "unknown")
+            return
+        end
+    end
 end
 
 if gui then
     while 1 do
         local num, scroll = 1, 0
 
-        local strs = {"refresh", "shutdown", "reboot", "settings", "boot to external os"}
-        local doc = {[0] = "navigation ↑↓\nok - enter", [5] = "boot to:\nopenOS\nplan9k\nother..."}
+        local strs = {"refresh", "shutdown", "reboot", "settings", "boot to external os", "download programm"}
+        local doc = {[0] = "navigation ↑↓\nok - enter", [5] = "boot to:\nopenOS\nplan9k\nother...", [6] = "download programm from internet used internet-card"}
         local runs = {}
         for address in component.list"filesystem" do
             local proxy = component.proxy(address)
@@ -632,6 +670,8 @@ if gui then
                 settings()
             elseif num == 5 then
                 bootToExternalOS()
+            elseif num == 6 then
+                downloadApp()
             else
                 if runs[num]() then
                     break
