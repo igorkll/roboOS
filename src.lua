@@ -513,14 +513,41 @@ local function downloadApp()
     end
 end
 
-local autorunProxy, autorunFile
-for address in component.list"filesystem" do
-    local proxy = component.proxy(address)
-    if proxy.exists("/roboOS/autorun.cfg") then
-        local data = getFile(proxy, "/roboOS/autorun.cfg")
-        if proxy.exists(data) then
-            autorunProxy = proxy
-            autorunFile = data
+if getDataPart(2) ~= "d" then --is not disable
+    local internal, external = {}, {}
+    do
+        local deviceinfo = computer.getDeviceInfo()
+        for address in component.list"filesystem" do
+            if component.slot(address) < 0 or deviceinfo[address].clock == "20/20/20" then
+                table.insert(external, address)
+            else
+                table.insert(internal, address)
+            end
+        end
+    end
+    local lists = {}
+    if getDataPart(2) == "" then --priority external
+        table.insert(lists, external)
+        table.insert(lists, internal)
+    elseif getDataPart(2) == "i" then --priority internal
+        table.insert(lists, internal)
+        table.insert(lists, external)
+    elseif getDataPart(2) == "a" then --only internal
+        table.insert(lists, internal)
+    elseif getDataPart(2) == "b" then --only external
+        table.insert(lists, external)
+    end
+
+    local autorunProxy, autorunFile
+    for _, list in ipairs(lists) do
+        for _, address in 
+        local proxy = component.proxy(address)
+        if proxy.exists"/roboOS/autorun.cfg" then
+            local data = getFile(proxy, "/roboOS/autorun.cfg")
+            if proxy.exists(data) then
+                autorunProxy = proxy
+                autorunFile = data
+            end
         end
     end
 end
