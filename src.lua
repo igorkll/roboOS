@@ -435,7 +435,11 @@ local function settings()
 end
 
 local function runProgramm(fs, file)
-    local data = getFile(fs, file)
+    local ok, data = pcall(getFile(fs, file))
+    if not ok or not data then
+        if gui then gui.warn("err to load programm") end
+        return a, "err to load programm"
+    end
     local code, err = load(data, "=programm")
     if not code then
         if gui then gui.warn("err to load programm: " .. err) end
@@ -444,7 +448,7 @@ local function runProgramm(fs, file)
     local ok, err = pcall(code, {file = file, fs = fs})
     if not ok then
         if gui then gui.warn("err to run programm: " .. (err or "unknown")) end
-        return a, err
+        return a, (err or "unknown")
     end
     return true
 end
