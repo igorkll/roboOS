@@ -292,12 +292,16 @@ end
 
 local setTheme
 if gui then
-    local currentTheme = getDataPart(1)
-    if currentTheme == "1" then
+    local currentTheme = getDataPart(1) == "1"
+    if currentTheme then
         gui.invert()
     end
-    local function setTheme()
-        
+    function setTheme(new)
+        if new ~= currentTheme then
+            gui.invert()
+            setDataPart(1, new and "1" or "")
+            currentTheme = new
+        end
     end
 end
 
@@ -309,9 +313,9 @@ local function themes()
         gui.setData("settings", doc, strs)
         num, scroll = gui.menu(num, scroll)
         if num == 1 then
-            setDataPart()
+            setTheme(1)
         elseif num == 2 then
-            usermenager()
+            setTheme()
         elseif num == 3 then
             break
         end
@@ -409,8 +413,8 @@ end
 
 local function settings()
     local num, scroll = 1, 0
-    local strs = {"autorun", "usermenager", "exit"}
-    local doc = {"set autorun mode and autorun programm", "user management(useradd/userremove/userlist)"}
+    local strs = {"autorun", "usermenager", "theme", "exit"}
+    local doc = {"set autorun mode and autorun programm", "user management(useradd/userremove/userlist)", "theme selector"}
     while 1 do
         gui.setData("settings", doc, strs)
         num, scroll = gui.menu(num, scroll)
@@ -419,6 +423,8 @@ local function settings()
         elseif num == 2 then
             usermenager()
         elseif num == 3 then
+            themes()
+        elseif num == 4 then
             break
         end
     end
