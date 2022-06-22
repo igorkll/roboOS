@@ -116,7 +116,7 @@ function fs_path(path)
 end
 
 function getInternetFile(url)--взято из mineOS efi от игорь тимофеев
-    local handle, data, result, reason = component.proxy(component.list("internet")()).request(url), ""
+    local handle, data, result, reason = component.proxy(component.list"internet"()).request(url), ""
     if handle then
         while 1 do
             result, reason = handle.read(math.huge)	
@@ -412,12 +412,46 @@ local function usermenager()
 end
 
 local function autorunSettings()
-    
+    local num, scroll = 1, 0
+    local strs = {"priority external", "priority internal", "only external", "only internal", "disable", "exit"}
+    local doc = {}
+    local function getMode()
+        if getDataPart(2) == "" then
+            doc[0] = "autoruns settings" .. "currect mode:\npriority external" --нет тут не пропушена \n она тут ненужна и так будет автоперенос
+        elseif getDataPart(2) == "i" then
+            doc[0] = "autoruns settings" .. "currect mode:\npriority internal"
+        elseif getDataPart(2) == "b" then
+            doc[0] = "autoruns settings" .. "currect mode:\nonly external"
+        elseif getDataPart(2) == "a" then
+            doc[0] = "autoruns settings" .. "currect mode:\nonly internal"
+        elseif getDataPart(2) == "d" then
+            doc[0] = "autoruns settings" .. "currect mode:\ndisable"
+        end
+    end
+    getMode()
+    while 1 do
+        gui.setData("autorun", doc, strs)
+        num, scroll = gui.menu(num, scroll)
+        if num == 1 then
+            setDataPart(2, "") --priority external
+        elseif num == 2 then
+            setDataPart(2, "i") --priority internal
+        elseif num == 3 then
+            setDataPart(2, "b") --only external
+        elseif num == 4 then
+            setDataPart(2, "a") --only internal
+        elseif num == 5 then
+            setDataPart(2, "d") --disable
+        elseif num == 6 then
+            break
+        end
+        getMode()
+    end
 end
 
 local function bootToExternalOS()
-    local num, scroll = 1, 0
     while 1 do
+        local num, scroll = 1, 0
         local strs = {"exit"}
         local osList = {}
         local docs = {[0] = "boot to:\nopenOS\nplan9k\nother..."}
@@ -498,14 +532,14 @@ local function runProgramm(fs, file)
 end
 
 local function downloadApp()
-    local internet = component.proxy(component.list("internet")() or "")
+    local internet = component.proxy(component.list"internet"() or "")
     if not internet then
         gui.warn"internet card is not found"
         return
     end
     local url = gui.read("url")
     if url then
-        gui.status("downloading")
+        gui.status"downloading"
         local data, err = getInternetFile(url)
         if not data then
             gui.warn(err or "unknown")
@@ -518,7 +552,7 @@ local function downloadApp()
             local proxy = component.proxy(address)
             if not proxy.isReadOnly() then
                 table.insert(runs, function()
-                    local name = gui.read("name to save")
+                    local name = gui.read"name to save"
                     if name then
                         if name:find"%/" or name:find"%\\" then
                             gui.status"unsupported char /"
@@ -556,7 +590,7 @@ if getDataPart(2) ~= "d" then --is not disable
     do
         local deviceinfo = computer.getDeviceInfo()
         for address in component.list"filesystem" do
-            if component.slot(address) < 0 or deviceinfo[address].clock == "20/20/20" then
+            if address ~= computer.tmpAddress() and (component.slot(address) < 0 or deviceinfo[address].clock == "20/20/20") then
                 table.insert(external, address)
             else
                 table.insert(internal, address)
@@ -594,7 +628,7 @@ end
 
 if autorunProxy then
     if gui then
-        gui.status("press alt to skip autorun")
+        gui.status"press alt to skip autorun"
         local inTime = computer.uptime()
         repeat
             local eventData = {computer.pullSignal(0.1)}
@@ -709,7 +743,10 @@ if gui then
                                     return 1
                                 end
                             elseif num == 2 then
-                                saveFile(proxy, "/roboOS/autorun.cfg", full_path .. "main.lua")
+                                if gui.yesno("set autorun?") then
+                                    if check() then return 1 end
+                                    saveFile(proxy, "/roboOS/autorun.cfg", full_path .. "main.lua")
+                                end
                             elseif num == 3 then
                                 --move
                                 if not copy(1) then
