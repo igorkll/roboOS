@@ -64,6 +64,20 @@ function toParts(str, max)
     return strs
 end
 
+function getFile(fs, file)
+    local file = assert(fs.open(file, "rb"))
+
+    local buffer = ""
+    while 1 do
+        local data = fs.read(file, math.huge)
+        if not data then break end
+        buffer = buffer .. data
+    end
+    fs.close(file)
+
+    return buffer
+end
+
 function bootToOS(fs, file)
     function computer.getBootAddress()
         return fs.address
@@ -85,17 +99,7 @@ function bootToOS(fs, file)
     function computer.setBootFile()
     end
 
-    local file = assert(fs.open(file, "rb"))
-
-    local buffer = ""
-    while 1 do
-        local data = fs.read(file, math.huge)
-        if not data then break end
-        buffer = buffer .. data
-    end
-    fs.close(file)
-
-    assert(load(buffer, "=init"))()
+    assert(load(getFile(fs, file), "=init"))()
     computer.shutdown()
 end
 
@@ -442,7 +446,15 @@ if gui then
             local programsPath = "/roboOS/programs/"
             for _, file in ipairs(proxy.list(programsPath) or {}) do
                 local full_path = programsPath .. file
-                table.insert()
+                if proxy.isDirectory(full_path) and proxy.exists(full_path .. "main.lua") then
+                    table.insert(strs, file:sub(1, #file - 1))
+                    if proxy.exists(full_path .. "doc.txt") then
+                        doc[#strs] = getFile(full_path .. "doc.txt")
+                    end
+                    table.insert(runs, function()
+                        
+                    end)
+                end
             end
         end
 
