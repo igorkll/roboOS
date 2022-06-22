@@ -513,6 +513,7 @@ local function downloadApp()
     end
 end
 
+local autorunProxy, autorunFile
 if getDataPart(2) ~= "d" then --is not disable
     local internal, external = {}, {}
     do
@@ -538,18 +539,20 @@ if getDataPart(2) ~= "d" then --is not disable
         table.insert(lists, external)
     end
 
-    local autorunProxy, autorunFile
     for _, list in ipairs(lists) do
-        for _, address in 
-        local proxy = component.proxy(address)
-        if proxy.exists"/roboOS/autorun.cfg" then
-            local data = getFile(proxy, "/roboOS/autorun.cfg")
-            if proxy.exists(data) then
-                autorunProxy = proxy
-                autorunFile = data
+        for _, address in ipairs(list) do
+            local proxy = component.proxy(address)
+            if proxy.exists"/roboOS/autorun.cfg" then
+                local data = getFile(proxy, "/roboOS/autorun.cfg")
+                if proxy.exists(data) then
+                    autorunProxy = proxy
+                    autorunFile = data
+                    goto breaking
+                end
             end
         end
     end
+    ::breaking::
 end
 
 if autorunProxy then
