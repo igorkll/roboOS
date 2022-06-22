@@ -1,6 +1,7 @@
 ---------------------------------------------init
 
 local c, p = component, computer
+local words = {"key_down", "/roboOS/autorun.cfg", "user management(useradd/userremove/userlist)", "unsupported char /"}
 
 ---------------------------------------------gpu
 --.{<кол-во символов>}|.+
@@ -169,7 +170,7 @@ if gpu then
 
         while 1 do
             local eventData = {p.pullSignal()}
-            if eventData[1] == "key_down" then
+            if eventData[1] == words[1] then
                 if eventData[4] == 28 then
                     exit()
                     return buffer
@@ -233,7 +234,7 @@ if gpu then
         gui.draw(num, scroll)
         while 1 do
             local eventData = {p.pullSignal()}
-            if eventData[1] == "key_down" then
+            if eventData[1] == words[1] then
                 if eventData[4] == 28 then
                     return num, scroll
                 elseif eventData[4] == 200 then
@@ -289,7 +290,7 @@ if gpu then
 
         while 1 do
             local eventData = {p.pullSignal()}
-            if eventData[1] == "key_down" and eventData[4] == 28 then
+            if eventData[1] == words[1] and eventData[4] == 28 then
                 break
             end
         end
@@ -322,7 +323,7 @@ if gpu then
             if not selected then gui.invert() end
 
             local eventData = {p.pullSignal()}
-            if eventData[1] == "key_down" then
+            if eventData[1] == words[1] then
                 if eventData[4] == 203 then
                     selected = 1
                 elseif eventData[4] == 205 then
@@ -373,7 +374,7 @@ local function usermenager()
     local num, scroll = 1, 0
 
     while 1 do
-        local strs, removers, docs = {"add new user", "exit"}, {}, {[0] = "user management(useradd/userremove/userlist)", "press enter to add new user"}
+        local strs, removers, docs = {"add new user", "exit"}, {}, {[0] = words[3], "press enter to add new user"}
 
         for _, nikname in ipairs{p.users()} do
             table.insert(strs, 1, nikname)
@@ -482,7 +483,7 @@ local function bootToExternalOS()
 end
 
 local function settings()
-    local num, scroll, strs, doc = 1, 0, {"autorun", "usermenager", "theme", "exit"}, {"set autorun mode and autorun programm", "user management(useradd/userremove/userlist)", "theme selector"}
+    local num, scroll, strs, doc = 1, 0, {"autorun", "usermenager", "theme", "exit"}, {"set autorun mode and autorun programm", words[3], "theme selector"}
 
     while 1 do
         gui.setData("settings", doc, strs)
@@ -544,7 +545,7 @@ local function downloadApp()
                     local name = gui.read"name to save"
                     if name then
                         if name:find"%/" or name:find"%\\" then
-                            gui.status"unsupported char /"
+                            gui.status(words[4])
                         else
                             local path = "/roboOS/programs/" .. name
                             if proxy.exists(path) then
@@ -601,8 +602,8 @@ if getDataPart(2) ~= "d" then --is not disable
     for _, list in ipairs(lists) do
         for _, address in ipairs(list) do
             local proxy = c.proxy(address)
-            if proxy.exists"/roboOS/autorun.cfg" then
-                local data = getFile(proxy, "/roboOS/autorun.cfg")
+            if proxy.exists(words[2]) then
+                local data = getFile(proxy, words[2])
                 if proxy.exists(data) then
                     autorunProxy = proxy
                     autorunFile = data
@@ -620,7 +621,7 @@ if autorunProxy then
         local inTime = p.uptime()
         repeat
             local eventData = {p.pullSignal(0.1)}
-            if eventData[1] == "key_down" and eventData[4] == 56 then
+            if eventData[1] == words[1] and eventData[4] == 56 then
                 goto skipautorun
             end
         until p.uptime() - inTime > 1
@@ -672,7 +673,7 @@ if gui then
                                     gui.warn"using new name canceled"
                                     gui.draw(num, scroll)
                                 elseif name:find"%/" or name:find"%\\" then
-                                    gui.warn"unsupported char /"
+                                    gui.warn(words[4])
                                     return 1
                                 else
                                     name = newname
@@ -711,21 +712,21 @@ if gui then
                             gui.setData("programm " .. programmName, {[0] = doc[index]}, {"open", "set to autorun", "move", "copy", "remove", "rename", "back"})
                             num, scroll = gui.menu(num, scroll)
                             local old_full_path = full_path
-                            local setAutorun = proxy.exists"/roboOS/autorun.cfg" and getFile(proxy, "/roboOS/autorun.cfg") == (old_full_path .. "main.lua")
+                            local setAutorun = proxy.exists(words[2]) and getFile(proxy, words[2]) == (old_full_path .. "main.lua")
                             if num == 1 then
                                 if not runProgramm(proxy, full_path .. "main.lua") then
                                     return 1
                                 end
                             elseif num == 2 then
                                 if gui.yesno("set autorun?") then
-                                    saveFile(proxy, "/roboOS/autorun.cfg", full_path .. "main.lua")
+                                    saveFile(proxy, words[2], full_path .. "main.lua")
                                 end
                             elseif num == 3 then
                                 --move
                                 if not copy(1) then
                                     proxy.remove(full_path)
                                     if setAutorun then
-                                        proxy.remove"/roboOS/autorun.cfg"
+                                        proxy.remove(words[2])
                                     end
                                     return 1
                                 end
@@ -739,7 +740,7 @@ if gui then
                                 if gui.yesno"remove?" then
                                     proxy.remove(full_path)
                                     if setAutorun then
-                                        proxy.remove"/roboOS/autorun.cfg"
+                                        proxy.remove(words[2])
                                     end
                                     return 1
                                 end
@@ -748,12 +749,12 @@ if gui then
                                 local data = gui.read"new name"
                                 if data then
                                     if data:find"%/" or data:find"%\\" then
-                                        gui.warn"unsupported char /"
+                                        gui.warn(words[4])
                                     else
                                         full_path = fs_path(old_full_path) .. "/" .. data
                                         proxy.rename(old_full_path, full_path)
                                         if setAutorun then
-                                            saveFile(proxy, "/roboOS/autorun.cfg", full_path .. "/main.lua")
+                                            saveFile(proxy, words[2], full_path .. "/main.lua")
                                         end
                                         return 1
                                     end
