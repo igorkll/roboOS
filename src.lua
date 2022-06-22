@@ -288,7 +288,35 @@ if gpu then
     end
 end
 
----------------------------------------------test
+---------------------------------------------main
+
+local setTheme
+if gui then
+    local currentTheme = getDataPart(1)
+    if currentTheme == "1" then
+        gui.invert()
+    end
+    local function setTheme()
+        
+    end
+end
+
+local function themes()
+    local num, scroll = 1, 0
+    local strs = {"white", "black", "exit"}
+    local doc = {[0] = "theme selector", "white theme", "black theme"}
+    while 1 do
+        gui.setData("settings", doc, strs)
+        num, scroll = gui.menu(num, scroll)
+        if num == 1 then
+            setDataPart()
+        elseif num == 2 then
+            usermenager()
+        elseif num == 3 then
+            break
+        end
+    end
+end
 
 local function usermenager()
     local num, scroll = 1, 0
