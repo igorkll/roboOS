@@ -434,6 +434,11 @@ local function settings()
     end
 end
 
+local function runProgramm(fs, file)
+    local data = getFile(fs, file)
+    local code, err = load(data, "=programm")
+end
+
 if gui then
     while 1 do
         local num, scroll = 1, 0
@@ -455,7 +460,7 @@ if gui then
                     end
                     runs[index] = function()
                         while 1 do
-                            gui.setData("programm " .. programmName, doc, strs)
+                            gui.setData("programm " .. programmName, {[0] = doc[index], "open", "clone", "remove", "rename", "back"}, strs)
                             num, scroll = gui.menu(num, scroll)
                             if num == 1 then
                                 break
