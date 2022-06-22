@@ -1,9 +1,13 @@
+---------------------------------------------init
+
+local c, p = c, p
+
 ---------------------------------------------gpu
 --.{<кол-во символов>}|.+
 
-local gpu, eeprom = component.proxy(component.list"gpu"() or ""), component.proxy(component.list"eeprom"())
+local gpu, eeprom = c.proxy(c.list"gpu"() or ""), c.proxy(c.list"eeprom"())
 if gpu then
-    if gpu.bind(component.list"screen"() or "", true) then
+    if gpu.bind(c.list"screen"() or "", true) then
         gpu.setResolution(50, 16)
     else
         gpu = a
@@ -12,11 +16,12 @@ end
 
 ---------------------------------------------eeprom
 
-function getDataPart(part)
+local function getDataPart(part)
     return split(eeprom.getData(), "\n")[part] or ""
 end
+_G.getDataPart = getDataPart
 
-function setDataPart(part, newdata)
+local function setDataPart(part, newdata)
     if getDataPart(part) == newdata then return end
     if newdata:find"\n" then error"\\n char" end
     local parts = split(eeprom.getData(), "\n")
@@ -26,10 +31,11 @@ function setDataPart(part, newdata)
     parts[part] = newdata
     eeprom.setData(table.concat(parts, "\n"))
 end
+_G.getDataPart = getDataPart
 
 ---------------------------------------------functions
 
-function split(str, sep)
+local function split(str, sep)
     local parts, count, i = {}, 1, 1
     while 1 do
         if i > #str then break end
@@ -46,23 +52,19 @@ function split(str, sep)
     if str:sub(#str - (#sep - 1), #str) == sep then table.insert(parts, "") end
     return parts
 end
+_G.split = split
 
-function toParts(str, max)
-    local strs, temp = {}, ""
-    for i = 1, #str do
-        local char = str:sub(i, i)
-        temp = temp .. char
-        if #temp >= max then
-            table.insert(strs, temp)
-            temp = ""
-        end
+local function toParts(str, max)
+    local strs = {}
+    while #str > 0 do
+        table.insert(strs, str:sub(1, max))
+        str = str:sub(#strs[#strs] + 1)
     end
-    table.insert(strs, temp)
-    if #strs[#strs] == 0 then table.remove(strs, #strs) end
     return strs
 end
+_G.toParts = toParts
 
-function getFile(fs, file)
+local function getFile(fs, file)
     local file, buffer = assert(fs.open(file, "rb")), ""
 
     while 1 do
@@ -74,46 +76,49 @@ function getFile(fs, file)
 
     return buffer
 end
+_G.getFile = getFile
 
-function saveFile(fs, file, data)
+local function saveFile(fs, file, data)
     local file = assert(fs.open(file, "wb"))
     fs.write(file, data)
     fs.close(file)
 end
+_G.saveFile = saveFile
 
-function bootToOS(fs, file)
-    function computer.getBootAddress()
+local function bootToOS(fs, file)
+    function p.getBootAddress()
         return fs.address
     end
-    function computer.getBootGpu()
+    function p.getBootGpu()
         return gpu and gpu.address
     end
-    function computer.getBootScreen()
+    function p.getBootScreen()
         return gpu and gpu.getScreen()
     end
-    function computer.getBootFile()
+    function p.getBootFile()
         return file
     end
 
-    function computer.setBootAddress()
+    function p.setBootAddress()
     end
-    function computer.setBootScreen()
+    function p.setBootScreen()
     end
-    function computer.setBootFile()
+    function p.setBootFile()
     end
 
     assert(load(getFile(fs, file), "=init"))()
-    computer.shutdown()
+    p.shutdown()
 end
 
-function fs_path(path)
+local function fs_path(path)
     local splited = split(path, "/")
     if splited[#splited] == "" then splited[#splited] = a end
     return table.concat({table.unpack(splited, 1, #splited - 1)}, "/")
 end
+_G.fs_path = fs_path
 
-function getInternetFile(url)--взято из mineOS efi от игорь тимофеев
-    local handle, data, result, reason = component.proxy(component.list"internet"()).request(url), ""
+local function getInternetFile(url)--взято из mineOS efi от игорь тимофеев
+    local handle, data, result, reason = c.proxy(c.list"internet"()).request(url), ""
     if handle then
         while 1 do
             result, reason = handle.read(math.huge)	
@@ -133,6 +138,7 @@ function getInternetFile(url)--взято из mineOS efi от игорь тим
         return a, "Unvalid Address"
     end
 end
+_G.getInternetFile = getInternetFile
 
 ---------------------------------------------gui
 
@@ -162,7 +168,7 @@ if gpu then
         end
 
         while 1 do
-            local eventData = {computer.pullSignal()}
+            local eventData = {p.pullSignal()}
             if eventData[1] == "key_down" then
                 if eventData[4] == 28 then
                     exit()
@@ -226,7 +232,7 @@ if gpu then
     function gui.menu(num, scroll)
         gui.draw(num, scroll)
         while 1 do
-            local eventData = {computer.pullSignal()}
+            local eventData = {p.pullSignal()}
             if eventData[1] == "key_down" then
                 if eventData[4] == 28 then
                     return num, scroll
@@ -279,10 +285,10 @@ if gpu then
         gui.setText(str, a, 12)
         gui.setText("Press Enter To Continue", a, 13)
 
-        computer.beep(100, 0.2)
+        p.beep(100, 0.2)
 
         while 1 do
-            local eventData = {computer.pullSignal()}
+            local eventData = {p.pullSignal()}
             if eventData[1] == "key_down" and eventData[4] == 28 then
                 break
             end
@@ -293,7 +299,7 @@ if gpu then
         gpu.fill(8, 3, rx - 15, ry - 4, "▒")
         gui.setText(str, a, ry / 2)
 
-        computer.beep(1000, 0.1)
+        p.beep(1000, 0.1)
     end
 
     function gui.yesno(str)
@@ -301,8 +307,8 @@ if gpu then
         gpu.fill((rx / 2) - 10, (ry / 2) - 1, 20, 5, "▒")
         gui.setText(str, a, (ry / 2))
 
-        computer.beep(500, 0.01)
-        computer.beep(2000, 0.01)
+        p.beep(500, 0.01)
+        p.beep(2000, 0.01)
 
         local selected = a
 
@@ -315,7 +321,7 @@ if gpu then
             gui.setText("no", 5, (ry / 2) + 2)
             if not selected then gui.invert() end
 
-            local eventData = {computer.pullSignal()}
+            local eventData = {p.pullSignal()}
             if eventData[1] == "key_down" then
                 if eventData[4] == 203 then
                     selected = 1
@@ -369,7 +375,7 @@ local function usermenager()
     while 1 do
         local strs, removers, docs = {"add new user", "exit"}, {}, {[0] = "user management(useradd/userremove/userlist)", "press enter to add new user"}
 
-        for _, nikname in ipairs{computer.users()} do
+        for _, nikname in ipairs{p.users()} do
             table.insert(strs, 1, nikname)
             table.insert(removers, 1, function()
                 if gui.yesno"remove user?" then
@@ -377,7 +383,7 @@ local function usermenager()
                         if v == nikname then
                             table.remove(strs, i)
                             table.remove(removers, i)
-                            computer.removeUser(nikname)
+                            p.removeUser(nikname)
                             break
                         end
                     end
@@ -393,7 +399,7 @@ local function usermenager()
         elseif num == (#strs - 1) then
             local nikname = gui.read"nikname"
             if nikname then
-                local ok, err = computer.addUser(nikname)
+                local ok, err = p.addUser(nikname)
                 if not ok then
                     gui.warn(err)
                 end
@@ -446,8 +452,8 @@ local function bootToExternalOS()
     while 1 do
         local num, scroll, strs, osList, docs = 1, 0, {"exit"}, {}, {[0] = "boot to:\nopenOS\nplan9k\nother..."}
 
-        for address in component.list"filesystem" do
-            local proxy = component.proxy(address)
+        for address in c.list"filesystem" do
+            local proxy = c.proxy(address)
             local function addFile(file)
                 table.insert(strs, 1, (proxy.getLabel() or "noLabel") .. ":" .. address:sub(1, 6) .. ":" .. file)
                 table.insert(osList, 1, function()
@@ -515,7 +521,7 @@ local function runProgramm(fs, file)
 end
 
 local function downloadApp()
-    local internet = component.proxy(component.list"internet"() or "")
+    local internet = c.proxy(c.list"internet"() or "")
     if not internet then
         gui.warn"internet card is not found"
         return
@@ -531,8 +537,8 @@ local function downloadApp()
         
         local strs, runs = {}, {}
 
-        for address in component.list"filesystem" do
-            local proxy = component.proxy(address)
+        for address in c.list"filesystem" do
+            local proxy = c.proxy(address)
             if not proxy.isReadOnly() then
                 table.insert(runs, function()
                     local name = gui.read"name to save"
@@ -571,9 +577,9 @@ local autorunProxy, autorunFile
 if getDataPart(2) ~= "d" then --is not disable
     local internal, external, lists = {}, {}, {}
     do
-        local deviceinfo = computer.getDeviceInfo()
-        for address in component.list"filesystem" do
-            if address ~= computer.tmpAddress() and (component.slot(address) < 0 or deviceinfo[address].clock == "20/20/20") then
+        local deviceinfo = p.getDeviceInfo()
+        for address in c.list"filesystem" do
+            if address ~= p.tmpAddress() and (c.slot(address) < 0 or deviceinfo[address].clock == "20/20/20") then
                 table.insert(external, address)
             else
                 table.insert(internal, address)
@@ -594,7 +600,7 @@ if getDataPart(2) ~= "d" then --is not disable
 
     for _, list in ipairs(lists) do
         for _, address in ipairs(list) do
-            local proxy = component.proxy(address)
+            local proxy = c.proxy(address)
             if proxy.exists"/roboOS/autorun.cfg" then
                 local data = getFile(proxy, "/roboOS/autorun.cfg")
                 if proxy.exists(data) then
@@ -611,13 +617,13 @@ end
 if autorunProxy then
     if gui then
         gui.status"press alt to skip autorun"
-        local inTime = computer.uptime()
+        local inTime = p.uptime()
         repeat
-            local eventData = {computer.pullSignal(0.1)}
+            local eventData = {p.pullSignal(0.1)}
             if eventData[1] == "key_down" and eventData[4] == 56 then
                 goto skipautorun
             end
-        until computer.uptime() - inTime > 1
+        until p.uptime() - inTime > 1
     end
     runProgramm(autorunProxy, autorunFile)
     ::skipautorun::
@@ -627,8 +633,8 @@ if gui then
     while 1 do
         local num, scroll, strs, doc, runs = 1, 0, {"refresh", "shutdown", "reboot", "settings", "boot to external os", "download programm"}, {[0] = "navigation ↑↓\nok - enter", [5] = "boot to:\nopenOS\nplan9k\nother...", [6] = "download programm from internet used internet-card"}, {}
 
-        for address in component.list"filesystem" do
-            local proxy, programsPath = component.proxy(address), "/roboOS/programs/"
+        for address in c.list"filesystem" do
+            local proxy, programsPath = c.proxy(address), "/roboOS/programs/"
             for _, file in ipairs(proxy.list(programsPath) or {}) do
                 local full_path = programsPath .. file
                 if proxy.isDirectory(full_path) and proxy.exists(full_path .. "main.lua") then
@@ -643,8 +649,8 @@ if gui then
                         local function copy(clone)
                             local strs = {}
                             local addresses = {}
-                            for address in component.list"filesystem" do
-                                local proxy = component.proxy(address)
+                            for address in c.list"filesystem" do
+                                local proxy = c.proxy(address)
                                 if not proxy.isReadOnly() then
                                     table.insert(strs, (proxy.getLabel() or "noLabel") .. ":" .. address:sub(1, 6))
                                     table.insert(addresses, address)
@@ -676,7 +682,7 @@ if gui then
                             if not gui.yesno(clone and "move?" or "copy?") then
                                 return 1
                             end
-                            local targetProxy = component.proxy(addresses[num])
+                            local targetProxy = c.proxy(addresses[num])
                             
                             local function recurse(path, toPath)
                                 for _, file in ipairs(proxy.list(path)) do
@@ -767,9 +773,9 @@ if gui then
             if num == 1 then
                 break
             elseif num == 2 then
-                computer.shutdown()
+                p.shutdown()
             elseif num == 3 then
-                computer.shutdown(1)
+                p.shutdown(1)
             elseif num == 4 then
                 settings()
             elseif num == 5 then
