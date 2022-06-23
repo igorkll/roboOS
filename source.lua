@@ -23,10 +23,18 @@ if gpu then
     end
 end
 
+---------------------------------------------fs
+
+bootfs.makeDirectory("/roboOS")
+
 ---------------------------------------------fake eeprom
 
 local function getData()
-    return bootfs.exists("/roboOS/settings.cfg") and getFile(bootfs, "/roboOS/settings.cfg") or ""
+    if bootfs.exists("/roboOS/settings.cfg") then
+        return getFile(bootfs, "/roboOS/settings.cfg")
+    else
+        return ""
+    end
 end
 
 local function setData(data)
@@ -101,6 +109,9 @@ local function saveFile(fs, file, data)
     fs.close(file)
 end
 _G.saveFile = saveFile
+if not bootfs.exists("/roboOS/settings.cfg") then
+    saveFile(bootfs, "/roboOS/settings.cfg", "")
+end
 
 local function bootToOS(fs, file)
     function p.getBootAddress()
