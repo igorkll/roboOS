@@ -12,7 +12,9 @@ local words = {"key_down", "/roboOS/autorun.cfg", "user management(useradd/userr
 ---------------------------------------------gpu
 --.{<кол-во символов>}|.+
 
-local gpu, eeprom = c.proxy(c.list"gpu"() or ""), c.proxy(c.list"eeprom"())
+local bootaddress = computer.getBootAddress()
+local bootfs = component.proxy(bootaddress)
+local gpu = c.proxy(c.list"gpu"() or "")
 if gpu then
     if gpu.bind(c.list"screen"() or "", true) then
         gpu.setResolution(50, 16)
@@ -21,22 +23,30 @@ if gpu then
     end
 end
 
----------------------------------------------eeprom
+---------------------------------------------fake eeprom
+
+local function getData()
+    return bootfs.exists("/roboOS/settings.cfg") and getFile(bootfs, "/roboOS/settings.cfg") or ""
+end
+
+local function setData(data)
+    saveFile(bootfs, "/roboOS/settings.cfg", data)
+end
 
 local function getDataPart(part)
-    return split(eeprom.getData(), "\n")[part] or ""
+    return split(getData(), "\n")[part] or ""
 end
 _G.getDataPart = getDataPart
 
 local function setDataPart(part, newdata)
     if getDataPart(part) == newdata then return end
     if newdata:find"\n" then error"\\n char" end
-    local parts = split(eeprom.getData(), "\n")
+    local parts = split(getData(), "\n")
     for i = part, 1, -1 do
         if not parts[i] then parts[i] = "" end
     end
     parts[part] = newdata
-    eeprom.setData(table.concat(parts, "\n"))
+    setData(table.concat(parts, "\n"))
 end
 _G.getDataPart = getDataPart
 
@@ -625,6 +635,8 @@ end
 
 if autorunProxy then
     if gui then
+        local rx, ry = gpu.getResolution()
+        gpu.fill(1, 1, rx, ry, " ")
         gui.status"press alt to skip autorun"
         local inTime = p.uptime()
         repeat
