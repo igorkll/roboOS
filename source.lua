@@ -1,3 +1,9 @@
+computer.setArchitecture("Lua 5.3")
+
+local code = [[
+--крайне извиняюсь за говнокод, так как этот код исначально предназначался для eeprom
+--именно по этому ТАК всрато я старался уталкать это чудо в 4кб
+
 ---------------------------------------------init
 
 local c, p = component, computer
@@ -148,9 +154,15 @@ if gpu then
     local rx, ry = gpu.getResolution()
     local label, docs, strs, docX = "", "", {}, math.floor((rx / 3) * 2)
 
-    function gui.invert()
+    local function invert()
         gpu.setBackground(gpu.setForeground(gpu.getBackground()))
     end
+    gui.invert = invert
+
+    local function setText(str, posX, posY)
+        gpu.set((posX or 0) + math.floor(((rx / 2) - ((unicode.len(str) - 1) / 2)) + 0.5), posY or math.floor((ry / 2) + 0.5), str)
+    end
+    gui.setText = setText
 
     function gui.read(str)
         local buffer = ""
@@ -223,9 +235,9 @@ if gpu then
             local posY = i + 2
             posY = posY - scroll
             if posY >= 3 and posY <= (ry - 2) then
-                if i == num then gui.invert() end
+                if i == num then invert() end
                 gpu.set(1, posY, data)
-                if i == num then gui.invert() end
+                if i == num then invert() end
             end
         end
     end
@@ -270,21 +282,17 @@ if gpu then
         end
     end
 
-    function gui.setText(str, posX, posY)
-        gpu.set((posX or 0) + math.floor(((rx / 2) - ((unicode.len(str) - 1) / 2)) + 0.5), posY or math.floor((ry / 2) + 0.5), str)
-    end
-
     function gui.warn(str)
         gpu.fill(8, 3, rx - 15, ry - 4, "▒")
-        gui.setText("▒▒▒▒▒▒█▒▒▒▒▒▒", a, 4)
-        gui.setText("▒▒▒▒▒███▒▒▒▒▒", a, 5)
-        gui.setText("▒▒▒▒██ ██▒▒▒▒", a, 6)
-        gui.setText("▒▒▒███ ███▒▒▒", a, 7)
-        gui.setText("▒▒█████████▒▒", a, 8)
-        gui.setText("▒█████ █████▒", a, 9)
-        gui.setText("█████████████", a, 10)
-        gui.setText(str, a, 12)
-        gui.setText("Press Enter To Continue", a, 13)
+        setText("▒▒▒▒▒▒█▒▒▒▒▒▒", a, 4)
+        setText("▒▒▒▒▒███▒▒▒▒▒", a, 5)
+        setText("▒▒▒▒██ ██▒▒▒▒", a, 6)
+        setText("▒▒▒███ ███▒▒▒", a, 7)
+        setText("▒▒█████████▒▒", a, 8)
+        setText("▒█████ █████▒", a, 9)
+        setText("█████████████", a, 10)
+        setText(str, a, 12)
+        setText("Press Enter To Continue", a, 13)
 
         p.beep(100, 0.2)
 
@@ -298,15 +306,15 @@ if gpu then
 
     function gui.status(str)
         gpu.fill(8, 3, rx - 15, ry - 4, "▒")
-        gui.setText(str, a, ry / 2)
+        setText(str, a, ry / 2)
 
         p.beep(1000, 0.1)
     end
 
     function gui.yesno(str)
-        gui.invert()
+        invert()
         gpu.fill((rx / 2) - 10, (ry / 2) - 1, 20, 5, "▒")
-        gui.setText(str, a, (ry / 2))
+        setText(str, a, (ry / 2))
 
         p.beep(500, 0.01)
         p.beep(2000, 0.01)
@@ -314,13 +322,13 @@ if gpu then
         local selected = a
 
         while 1 do
-            if selected then gui.invert() end
-            gui.setText("yes", -5, (ry / 2) + 2)
-            if selected then gui.invert() end
+            if selected then invert() end
+            setText("yes", -5, (ry / 2) + 2)
+            if selected then invert() end
 
-            if not selected then gui.invert() end
-            gui.setText("no", 5, (ry / 2) + 2)
-            if not selected then gui.invert() end
+            if not selected then invert() end
+            setText("no", 5, (ry / 2) + 2)
+            if not selected then invert() end
 
             local eventData = {p.pullSignal()}
             if eventData[1] == words[1] then
@@ -329,7 +337,7 @@ if gpu then
                 elseif eventData[4] == 205 then
                     selected = a
                 elseif eventData[4] == 28 then
-                    gui.invert()
+                    invert()
                     return selected
                 end
             end
@@ -574,11 +582,11 @@ local function downloadApp()
     end
 end
 
+local deviceinfo = p.getDeviceInfo()
 local autorunProxy, autorunFile
 if getDataPart(2) ~= "d" then --is not disable
     local internal, external, lists = {}, {}, {}
     do
-        local deviceinfo = p.getDeviceInfo()
         for address in c.list"filesystem" do
             if address ~= p.tmpAddress() and (c.slot(address) < 0 or deviceinfo[address].clock == "20/20/20") then
                 table.insert(external, address)
@@ -631,8 +639,9 @@ if autorunProxy then
 end
 
 if gui then
+    local num, scroll = 1, 0
     while 1 do
-        local num, scroll, strs, doc, runs = 1, 0, {"refresh", "shutdown", "reboot", "settings", "boot to external os", "download programm"}, {[0] = "navigation ↑↓\nok - enter", [5] = "boot to:\nopenOS\nplan9k\nother...", [6] = "download programm from internet used internet-card"}, {}
+        local strs, doc, runs = {"refresh", "shutdown", "reboot", "settings", "boot to external os", "download programm"}, {[0] = "navigation ↑↓\nok - enter", [5] = "boot to:\nopenOS\nplan9k\nother...", [6] = "download programm from internet used internet-card"}, {}
 
         for address in c.list"filesystem" do
             local proxy, programsPath = c.proxy(address), "/roboOS/programs/"
@@ -767,6 +776,10 @@ if gui then
                 end
             end
         end
+        if num > #strs then
+            num = 1
+            scroll = 0
+        end
 
         while 1 do
             gui.setData("roboOS", doc, strs)
@@ -793,3 +806,5 @@ if gui then
         end
     end
 end
+]]
+assert(load(code, "=OS"))()
